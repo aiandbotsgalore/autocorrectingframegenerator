@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { X } from 'lucide-react';
 import { getScoreColor, getScoreTier } from '../utils/imageDownload';
 
-export default function IterationHistory({ iterations }) {
+const IterationHistory = memo(function IterationHistory({ iterations }) {
   const [selectedIteration, setSelectedIteration] = useState(null);
 
   if (iterations.length === 0) return null;
@@ -24,6 +24,7 @@ export default function IterationHistory({ iterations }) {
                   <img
                     src={iter.image}
                     alt={`Iteration ${iter.iteration}`}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2 bg-black/80 text-white text-xs font-bold px-2 py-1 rounded">
@@ -139,4 +140,6 @@ export default function IterationHistory({ iterations }) {
       )}
     </>
   );
-}
+});
+
+export default IterationHistory;
