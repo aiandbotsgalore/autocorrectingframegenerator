@@ -95,10 +95,14 @@ export default function ApiKeyInput({ apiKey, onApiKeyChange }) {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           placeholder="AIza..."
+          aria-label="Gemini API Key"
+          aria-invalid={validationStatus === 'error'}
+          aria-describedby={validationStatus === 'error' ? 'api-key-error' : undefined}
           className="w-full bg-[#0a0a0a] border border-[#333333] rounded-lg px-4 py-3 pr-24 text-white placeholder-[#666666] focus:outline-none focus:border-[#00d4ff] transition-colors"
         />
         <button
           onClick={() => setShowKey(!showKey)}
+          aria-label={showKey ? 'Hide API key' : 'Show API key'}
           className="absolute right-14 top-1/2 -translate-y-1/2 text-[#999999] hover:text-white transition-colors"
         >
           {showKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -112,7 +116,7 @@ export default function ApiKeyInput({ apiKey, onApiKeyChange }) {
       </div>
 
       {validationStatus === 'error' && (
-        <p className="text-[#ff4444] text-sm mt-2">
+        <p id="api-key-error" className="text-[#ff4444] text-sm mt-2">
           Invalid API key. Please check and try again.
         </p>
       )}
