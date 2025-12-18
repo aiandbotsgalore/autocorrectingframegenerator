@@ -25,6 +25,7 @@ const IterationHistory = memo(function IterationHistory({ iterations }) {
                   <img
                     src={iter.image}
                     alt={`Iteration ${iter.iteration}`}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
