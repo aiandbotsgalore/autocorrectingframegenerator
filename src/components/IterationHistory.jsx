@@ -90,6 +90,7 @@ const IterationHistory = memo(function IterationHistory({ iterations }) {
                   alt={`Iteration ${selectedIteration.iteration}`}
                   className="w-full h-auto object-contain"
                   style={{ aspectRatio: '16/9' }}
+                  decoding="async"
                 />
               </div>
 
