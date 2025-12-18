@@ -1,3 +1,3 @@
-## 2024-05-22 - Accessibility in Complex Forms
-**Learning:** For inputs with complex constraints (like word counts), combining `aria-describedby` for static rules and `aria-live` for dynamic feedback is crucial.
-**Action:** Always pair visible constraint text with `aria-describedby` and dynamic counters with `aria-live="polite"`.
+## 2024-05-22 - [Accessibility: Icon Buttons]
+**Learning:** Icon-only buttons (like password toggles) are completely invisible to screen readers without an `aria-label`.
+**Action:** Always add dynamic `aria-label` props (e.g., "Show password" / "Hide password") to state-dependent icon buttons.
