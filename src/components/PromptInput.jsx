@@ -55,6 +55,7 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={isGenerating}
+          aria-label="Image Description Prompt"
           placeholder="Describe your cinematic frame in detail...&#10;&#10;Include:&#10;• Subject and action&#10;• Environment/setting&#10;• Lighting (direction, color temp in Kelvin, quality)&#10;• Color palette (specific colors)&#10;• Camera specs (focal length, angle, f-stop)&#10;• Mood/atmosphere&#10;&#10;Example: Two ethereal blue hands reach upward toward brilliant white-blue sphere of light in deep black cosmic void. Hands translucent with visible blue energy veins. Light sphere radiates intense white-blue luminescence (9000K) with corona halo. Shot 50mm focal length, low angle, f/4 depth of field. High contrast: deep blacks (RGB 0,0,0), brilliant highlights. Mood: cosmic awakening, grasping consciousness."
           className="w-full bg-[#0a0a0a] border border-[#333333] rounded-lg px-4 py-3 text-white placeholder-[#666666] focus:outline-none focus:border-[#00d4ff] transition-colors resize-none min-h-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
         />
