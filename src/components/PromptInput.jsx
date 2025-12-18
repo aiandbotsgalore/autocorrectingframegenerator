@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import ExamplePrompts from './ExamplePrompts';
 
-export default function PromptInput({ onGenerate, isGenerating, apiKey }) {
+const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey }) {
   const [prompt, setPrompt] = useState('');
   const [wordCount, setWordCount] = useState(0);
 
@@ -96,4 +96,6 @@ export default function PromptInput({ onGenerate, isGenerating, apiKey }) {
       </div>
     </div>
   );
-}
+});
+
+export default PromptInput;
