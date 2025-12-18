@@ -45,12 +45,15 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
             <Sparkles className="w-5 h-5 text-[#00d4ff]" />
           </div>
           <div>
-            <h3 className="text-white font-semibold text-lg">Image Specification</h3>
-            <p className="text-[#999999] text-sm">75-150 words</p>
+            <h3 id="prompt-label" className="text-white font-semibold text-lg">Image Specification</h3>
+            <p id="prompt-desc" className="text-[#999999] text-sm">75-150 words</p>
           </div>
         </div>
 
         <textarea
+          id="prompt-input"
+          aria-labelledby="prompt-label"
+          aria-describedby="prompt-desc prompt-feedback"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -61,7 +64,7 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
         />
 
         <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" aria-live="polite" id="prompt-feedback">
             <span
               className={`text-sm font-medium ${
                 wordCount === 0
