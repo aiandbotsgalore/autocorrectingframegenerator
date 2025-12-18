@@ -21,11 +21,13 @@ const IterationHistory = memo(function IterationHistory({ iterations }) {
                 className="bg-[#1a1a1a] border border-[#333333] rounded-lg overflow-hidden hover:border-[#00d4ff] transition-all hover:scale-105 text-left group"
               >
                 <div className="relative aspect-video bg-black">
+                  {/* Lazy load images to improve performance when history list grows */}
                   <img
                     src={iter.image}
                     alt={`Iteration ${iter.iteration}`}
                     loading="lazy"
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                   <div className="absolute top-2 left-2 bg-black/80 text-white text-xs font-bold px-2 py-1 rounded">
                     #{iter.iteration}
@@ -89,6 +91,7 @@ const IterationHistory = memo(function IterationHistory({ iterations }) {
                   alt={`Iteration ${selectedIteration.iteration}`}
                   className="w-full h-auto object-contain"
                   style={{ aspectRatio: '16/9' }}
+                  decoding="async"
                 />
               </div>
 
