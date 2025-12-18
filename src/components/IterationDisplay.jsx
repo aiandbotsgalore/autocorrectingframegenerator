@@ -66,6 +66,47 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
 
       {evaluation && (
         <div className="space-y-4">
+          <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4">
+            <h4 className="text-white font-semibold mb-3">Evaluation Criteria</h4>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#999999]">Subject Accuracy</span>
+                <span className="text-[#666666]">0-20 pts</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#999999]">Composition & Framing</span>
+                <span className="text-[#666666]">0-20 pts</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#999999]">Lighting Quality</span>
+                <span className="text-[#666666]">0-20 pts</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#999999]">Color Palette</span>
+                <span className="text-[#666666]">0-20 pts</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#999999]">Style & Mood</span>
+                <span className="text-[#666666]">0-10 pts</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#999999]">Specific Details</span>
+                <span className="text-[#666666]">0-10 pts</span>
+              </div>
+              <div className="border-t border-[#333333] pt-3 mt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-semibold">Total Score</span>
+                  <span
+                    className="text-lg font-bold"
+                    style={{ color: scoreColor }}
+                  >
+                    {score}/100
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-[#0a0a0a] border border-[#00ff88]/20 rounded-lg p-4">
             <h4 className="text-[#00ff88] font-semibold mb-3 flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />

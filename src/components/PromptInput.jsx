@@ -5,15 +5,19 @@ import ExamplePrompts from './ExamplePrompts';
 const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey }) {
   const [prompt, setPrompt] = useState('');
   const [wordCount, setWordCount] = useState(0);
+  const [mode, setMode] = useState('simple'); // 'simple' or 'pro'
 
   useEffect(() => {
     const words = prompt.trim().split(/\s+/).filter(word => word.length > 0);
     setWordCount(words.length);
   }, [prompt]);
 
+  const minWords = mode === 'simple' ? 30 : 75;
+  const maxWords = mode === 'simple' ? 100 : 150;
+
   const handleSubmit = () => {
-    if (wordCount >= 75 && wordCount <= 150) {
-      onGenerate(prompt);
+    if (wordCount >= minWords && wordCount <= maxWords) {
+      onGenerate(prompt, mode);
     }
   };
 
@@ -23,7 +27,7 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
     }
   };
 
-  const isValidLength = wordCount >= 75 && wordCount <= 150;
+  const isValidLength = wordCount >= minWords && wordCount <= maxWords;
   const showWarning = wordCount > 0 && !isValidLength;
 
   return (
@@ -40,13 +44,37 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
       <ExamplePrompts onSelectExample={setPrompt} />
 
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-[#00d4ff]/10 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-[#00d4ff]" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#00d4ff]/10 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-[#00d4ff]" />
+            </div>
+            <div>
+              <h3 id="prompt-label" className="text-white font-semibold text-lg">Image Specification</h3>
+              <p id="prompt-desc" className="text-[#999999] text-sm">{minWords}-{maxWords} words</p>
+            </div>
           </div>
-          <div>
-            <h3 id="prompt-label" className="text-white font-semibold text-lg">Image Specification</h3>
-            <p id="prompt-desc" className="text-[#999999] text-sm">75-150 words</p>
+          <div className="flex gap-2 bg-[#0a0a0a] rounded-lg p-1">
+            <button
+              onClick={() => setMode('simple')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                mode === 'simple'
+                  ? 'bg-[#00d4ff] text-[#0a0a0a]'
+                  : 'text-[#999999] hover:text-white'
+              }`}
+            >
+              Simple
+            </button>
+            <button
+              onClick={() => setMode('pro')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                mode === 'pro'
+                  ? 'bg-[#00d4ff] text-[#0a0a0a]'
+                  : 'text-[#999999] hover:text-white'
+              }`}
+            >
+              Pro
+            </button>
           </div>
         </div>
 
@@ -59,7 +87,11 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
           onKeyDown={handleKeyDown}
           disabled={isGenerating}
           aria-label="Image Description Prompt"
-          placeholder="Describe your cinematic frame in detail...&#10;&#10;Include:&#10;• Subject and action&#10;• Environment/setting&#10;• Lighting (direction, color temp in Kelvin, quality)&#10;• Color palette (specific colors)&#10;• Camera specs (focal length, angle, f-stop)&#10;• Mood/atmosphere&#10;&#10;Example: Two ethereal blue hands reach upward toward brilliant white-blue sphere of light in deep black cosmic void. Hands translucent with visible blue energy veins. Light sphere radiates intense white-blue luminescence (9000K) with corona halo. Shot 50mm focal length, low angle, f/4 depth of field. High contrast: deep blacks (RGB 0,0,0), brilliant highlights. Mood: cosmic awakening, grasping consciousness."
+          placeholder={
+            mode === 'simple'
+              ? "Describe your cinematic frame...&#10;&#10;Focus on:&#10;• What's in the scene (subjects, objects)&#10;• The environment and setting&#10;• The mood and atmosphere&#10;• Any important colors or lighting feel&#10;&#10;Example: An astronaut standing on the edge of a massive crater on Mars during golden hour. The setting sun casts long shadows across the red rocky terrain. In their helmet's reflection, Earth appears as a tiny blue dot against the pink Martian sky. The scene feels both isolating and full of wonder."
+              : "Describe your cinematic frame in detail...&#10;&#10;Include:&#10;• Subject and action&#10;• Environment/setting&#10;• Lighting (direction, color temp in Kelvin, quality)&#10;• Color palette (specific colors)&#10;• Camera specs (focal length, angle, f-stop)&#10;• Mood/atmosphere&#10;&#10;Example: Two ethereal blue hands reach upward toward brilliant white-blue sphere of light in deep black cosmic void. Hands translucent with visible blue energy veins. Light sphere radiates intense white-blue luminescence (9000K) with corona halo. Shot 50mm focal length, low angle, f/4 depth of field. High contrast: deep blacks (RGB 0,0,0), brilliant highlights. Mood: cosmic awakening, grasping consciousness."
+          }
           className="w-full bg-[#0a0a0a] border border-[#333333] rounded-lg px-4 py-3 text-white placeholder-[#666666] focus:outline-none focus:border-[#00d4ff] transition-colors resize-none min-h-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
         />
 
@@ -71,16 +103,16 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
                   ? 'text-[#666666]'
                   : isValidLength
                   ? 'text-[#00ff88]'
-                  : wordCount < 75
+                  : wordCount < minWords
                   ? 'text-[#ffaa00]'
                   : 'text-[#ff4444]'
               }`}
             >
-              {wordCount} / 75-150 words
+              {wordCount} / {minWords}-{maxWords} words
             </span>
             {showWarning && (
               <span className="text-[#999999] text-sm">
-                {wordCount < 75 ? `Need ${75 - wordCount} more words` : `${wordCount - 150} words over limit`}
+                {wordCount < minWords ? `Need ${minWords - wordCount} more words` : `${wordCount - maxWords} words over limit`}
               </span>
             )}
           </div>

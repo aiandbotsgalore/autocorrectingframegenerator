@@ -1,4 +1,4 @@
-import { CheckCircle, AlertTriangle, Download, RefreshCw } from 'lucide-react';
+import { CheckCircle, Download, RefreshCw } from 'lucide-react';
 import { downloadImage, getScoreColor, getScoreTier } from '../utils/imageDownload';
 
 export default function FinalResult({ result, onNewGeneration }) {
@@ -20,18 +20,18 @@ export default function FinalResult({ result, onNewGeneration }) {
           {success ? (
             <>
               <CheckCircle className="w-8 h-8" style={{ color: scoreColor }} />
-              <h2 className="text-white font-bold text-2xl">TARGET ACHIEVED!</h2>
+              <h2 className="text-white font-bold text-2xl">PROFESSIONAL QUALITY ACHIEVED!</h2>
             </>
           ) : (
             <>
-              <AlertTriangle className="w-8 h-8" style={{ color: scoreColor }} />
-              <h2 className="text-white font-bold text-2xl">BEST RESULT</h2>
+              <CheckCircle className="w-8 h-8" style={{ color: scoreColor }} />
+              <h2 className="text-white font-bold text-2xl">AUTO-REFINEMENT COMPLETE</h2>
             </>
           )}
         </div>
         {!success && (
           <p className="text-[#999999] text-sm">
-            Maximum iterations reached. This is the highest quality achieved.
+            Refined through {iterations} iterations to {finalIteration.score}% quality — significantly enhanced from initial generation.
           </p>
         )}
       </div>
@@ -61,12 +61,12 @@ export default function FinalResult({ result, onNewGeneration }) {
           </div>
 
           <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4 text-center">
-            <div className="text-[#999999] text-sm mb-1">Total Iterations</div>
+            <div className="text-[#999999] text-sm mb-1">Auto-Refinements</div>
             <div className="text-3xl font-bold text-[#00d4ff]">
               {iterations}
             </div>
             <div className="text-[#666666] text-xs mt-1">
-              {iterations < 10 ? 'Completed early' : 'Max reached'}
+              {iterations < 10 ? 'Target achieved' : 'Work completed'}
             </div>
           </div>
 
@@ -107,6 +107,47 @@ export default function FinalResult({ result, onNewGeneration }) {
 
         {finalIteration.evaluation && (
           <div className="mt-4 space-y-4">
+            <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4">
+              <h4 className="text-white font-semibold mb-3">Evaluation Breakdown</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#999999]">Subject Accuracy</span>
+                  <span className="text-[#666666]">0-20 pts</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#999999]">Composition & Framing</span>
+                  <span className="text-[#666666]">0-20 pts</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#999999]">Lighting Quality</span>
+                  <span className="text-[#666666]">0-20 pts</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#999999]">Color Palette</span>
+                  <span className="text-[#666666]">0-20 pts</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#999999]">Style & Mood</span>
+                  <span className="text-[#666666]">0-10 pts</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#999999]">Specific Details</span>
+                  <span className="text-[#666666]">0-10 pts</span>
+                </div>
+                <div className="border-t border-[#333333] pt-3 mt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-semibold">Total Score</span>
+                    <span
+                      className="text-lg font-bold"
+                      style={{ color: scoreColor }}
+                    >
+                      {finalIteration.score}/100
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-[#0a0a0a] border border-[#00ff88]/20 rounded-lg p-4">
               <h4 className="text-[#00ff88] font-semibold mb-3">
                 STRENGTHS:

@@ -17,6 +17,7 @@ interface Iteration {
     strengths: string[];
   };
   prompt: string;
+  correctedPrompt?: string;
 }
 
 interface CurrentIteration {
@@ -55,7 +56,7 @@ function App() {
     document.title = 'Auto-Correcting Music Video Frame Generator';
   }, []);
 
-  const handleGenerate = async (userPrompt: string) => {
+  const handleGenerate = async (userPrompt: string, mode: string = 'pro') => {
     setIsGenerating(true);
     setError(null);
     setCurrentIteration(null);
@@ -66,6 +67,7 @@ function App() {
       const result = await autoRefineImage(
         userPrompt,
         apiKey,
+        mode,
         (update: CurrentIteration) => {
           setCurrentIteration(update);
 
@@ -73,6 +75,14 @@ function App() {
             setIterationHistory((prev) => {
               const existing = prev.find((iter) => iter.iteration === update.iteration);
               if (existing) {
+                // Update existing iteration with corrected prompt if available
+                if (update.correctedPrompt) {
+                  return prev.map((iter) =>
+                    iter.iteration === update.iteration
+                      ? { ...iter, correctedPrompt: update.correctedPrompt || undefined }
+                      : iter
+                  );
+                }
                 return prev;
               }
               return [
@@ -82,7 +92,8 @@ function App() {
                   image: update.image!,
                   score: update.score!,
                   evaluation: update.evaluation!,
-                  prompt: ''
+                  prompt: '',
+                  correctedPrompt: update.correctedPrompt || undefined
                 }
               ];
             });
@@ -166,7 +177,10 @@ function App() {
         )}
 
         {iterationHistory.length > 0 && (
-          <IterationHistory iterations={iterationHistory} />
+          <IterationHistory
+            iterations={iterationHistory}
+            isGenerating={isGenerating}
+          />
         )}
 
         <footer className="text-center mt-12 pt-8 border-t border-[#333333]">

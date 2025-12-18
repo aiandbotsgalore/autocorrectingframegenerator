@@ -128,10 +128,16 @@ Return ONLY the corrected prompt text (no explanations, no JSON, no preamble).`;
   return response.text().trim();
 }
 
-export async function autoRefineImage(userPrompt, apiKey, onIterationUpdate) {
+function enhanceSimplePrompt(simplePrompt) {
+  // Add technical defaults to simple prompts
+  return `${simplePrompt}. Shot with 50mm focal length at eye level, f/4 depth of field. Natural lighting at 5500K color temperature. Cinematic 16:9 widescreen composition with balanced framing. Professional color grading with rich, saturated tones.`;
+}
+
+export async function autoRefineImage(userPrompt, apiKey, mode, onIterationUpdate) {
   const maxIterations = 10;
   let iteration = 0;
-  let currentPrompt = userPrompt;
+  // Enhance simple prompts with technical defaults
+  let currentPrompt = mode === 'simple' ? enhanceSimplePrompt(userPrompt) : userPrompt;
   let bestResult = null;
 
   while (iteration < maxIterations) {
@@ -140,7 +146,7 @@ export async function autoRefineImage(userPrompt, apiKey, onIterationUpdate) {
     try {
       onIterationUpdate({
         iteration,
-        status: 'Generating image...',
+        status: iteration === 1 ? 'Generating your first frame...' : `Creating refined version ${iteration}...`,
         image: null,
         score: null,
         evaluation: null,
@@ -151,7 +157,7 @@ export async function autoRefineImage(userPrompt, apiKey, onIterationUpdate) {
 
       onIterationUpdate({
         iteration,
-        status: 'Analyzing quality...',
+        status: 'Evaluating against your vision...',
         image: imageData,
         score: null,
         evaluation: null,
@@ -170,9 +176,23 @@ export async function autoRefineImage(userPrompt, apiKey, onIterationUpdate) {
 
       bestResult = result;
 
+      // Create meaningful status based on score
+      let progressStatus;
+      if (evaluation.score >= 95) {
+        progressStatus = '🎬 Professional quality achieved!';
+      } else if (evaluation.score >= 90) {
+        progressStatus = `Nearly there! ${evaluation.score}% — refining final details...`;
+      } else if (evaluation.score >= 85) {
+        progressStatus = `Strong progress at ${evaluation.score}% — continuing refinement...`;
+      } else if (evaluation.score >= 70) {
+        progressStatus = `${evaluation.score}% quality — identifying improvements...`;
+      } else {
+        progressStatus = `${evaluation.score}% — analyzing and correcting...`;
+      }
+
       onIterationUpdate({
         iteration,
-        status: evaluation.score >= 95 ? 'Target achieved!' : 'Evaluation complete',
+        status: progressStatus,
         image: imageData,
         score: evaluation.score,
         evaluation,
@@ -183,9 +203,13 @@ export async function autoRefineImage(userPrompt, apiKey, onIterationUpdate) {
         return { success: true, result: bestResult, iterations: iteration };
       }
 
+      // Create specific correction status based on issues
+      const mainIssue = evaluation.issues[0] || 'details';
+      const correctionStatus = `Correcting ${mainIssue.toLowerCase().substring(0, 50)}...`;
+
       onIterationUpdate({
         iteration,
-        status: 'Creating correction...',
+        status: correctionStatus,
         image: imageData,
         score: evaluation.score,
         evaluation,
@@ -203,7 +227,7 @@ export async function autoRefineImage(userPrompt, apiKey, onIterationUpdate) {
 
       onIterationUpdate({
         iteration,
-        status: 'Generating next iteration...',
+        status: `Applying corrections for iteration ${iteration + 1}...`,
         image: imageData,
         score: evaluation.score,
         evaluation,

@@ -1,16 +1,72 @@
 import { useState, memo } from 'react';
-import { X } from 'lucide-react';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { getScoreColor, getScoreTier } from '../utils/imageDownload';
 
-const IterationHistory = memo(function IterationHistory({ iterations }) {
+const IterationHistory = memo(function IterationHistory({ iterations, isGenerating }) {
   const [selectedIteration, setSelectedIteration] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (iterations.length === 0) return null;
+
+  // Show compact summary while generating
+  if (isGenerating && !isExpanded) {
+    const latestScores = iterations.slice(-3).map(iter => iter.score);
+    const currentScore = iterations[iterations.length - 1]?.score || 0;
+
+    return (
+      <div className="mb-6">
+        <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-2">🔄 Refining...</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-[#999999] text-sm">
+                  Iteration {iterations.length}/10
+                </span>
+                <span className="text-[#666666]">•</span>
+                <span className="text-sm font-medium" style={{ color: getScoreColor(currentScore) }}>
+                  Current: {currentScore}%
+                </span>
+                {latestScores.length > 1 && (
+                  <>
+                    <span className="text-[#666666]">•</span>
+                    <span className="text-[#666666] text-sm">
+                      Previous: {latestScores.slice(0, -1).join('%, ')}%
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="text-[#00d4ff] text-sm font-medium hover:underline flex items-center gap-1"
+            >
+              View Details
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="mb-6">
-        <h3 className="text-white font-bold text-xl mb-4">Iteration History</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold text-xl">
+            {isGenerating ? 'Iteration Progress' : 'Iteration History'}
+          </h3>
+          {isGenerating && isExpanded && (
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="text-[#00d4ff] text-sm font-medium hover:underline flex items-center gap-1"
+            >
+              Minimize
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {iterations.map((iter) => {
             const scoreColor = getScoreColor(iter.score);
@@ -27,7 +83,6 @@ const IterationHistory = memo(function IterationHistory({ iterations }) {
                     alt={`Iteration ${iter.iteration}`}
                     loading="lazy"
                     className="w-full h-full object-cover"
-                    loading="lazy"
                   />
                   <div className="absolute top-2 left-2 bg-black/80 text-white text-xs font-bold px-2 py-1 rounded">
                     #{iter.iteration}
@@ -102,6 +157,18 @@ const IterationHistory = memo(function IterationHistory({ iterations }) {
                     {selectedIteration.prompt}
                   </p>
                 </div>
+
+                {selectedIteration.correctedPrompt && (
+                  <div className="bg-[#0a0a0a] border border-[#00d4ff]/20 rounded-lg p-4">
+                    <h4 className="text-[#00d4ff] font-semibold mb-2">Correction Applied:</h4>
+                    <p className="text-[#999999] text-sm leading-relaxed mb-3">
+                      After analyzing this iteration, the prompt was refined for the next generation:
+                    </p>
+                    <p className="text-white text-sm font-mono bg-black/50 p-3 rounded leading-relaxed">
+                      {selectedIteration.correctedPrompt}
+                    </p>
+                  </div>
+                )}
 
                 {selectedIteration.evaluation && (
                   <>
