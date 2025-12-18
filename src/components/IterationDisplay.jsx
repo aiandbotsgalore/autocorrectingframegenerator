@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { getScoreColor } from '../utils/imageDownload';
 
-export default function IterationDisplay({ currentIteration }) {
+const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
   if (!currentIteration) return null;
 
   const { iteration, status, image, score, evaluation, correctedPrompt } = currentIteration;
@@ -119,4 +120,6 @@ export default function IterationDisplay({ currentIteration }) {
       )}
     </div>
   );
-}
+});
+
+export default IterationDisplay;
