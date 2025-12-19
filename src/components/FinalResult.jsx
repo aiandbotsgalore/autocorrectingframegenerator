@@ -4,8 +4,9 @@ import { downloadImage, getScoreColor, getScoreTier } from '../utils/imageDownlo
 export default function FinalResult({ result, onNewGeneration }) {
   if (!result) return null;
 
-  const { success, result: finalIteration, iterations } = result;
-  const scoreColor = getScoreColor(finalIteration.score);
+  const { success, result: finalIteration, iterations, stoppingReason, stoppingExplanation } = result;
+  const scoreColor = getScoreColor(finalIteration.accuracyScore);
+  const visionColor = getScoreColor(finalIteration.visionScore);
 
   return (
     <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg overflow-hidden mb-6 animate-fade-in">
@@ -25,15 +26,13 @@ export default function FinalResult({ result, onNewGeneration }) {
           ) : (
             <>
               <CheckCircle className="w-8 h-8" style={{ color: scoreColor }} />
-              <h2 className="text-white font-bold text-2xl">AUTO-REFINEMENT COMPLETE</h2>
+              <h2 className="text-white font-bold text-2xl">INTELLIGENT REFINEMENT COMPLETE</h2>
             </>
           )}
         </div>
-        {!success && (
-          <p className="text-[#999999] text-sm">
-            Refined through {iterations} iterations to {finalIteration.score}% quality — significantly enhanced from initial generation.
-          </p>
-        )}
+        <p className="text-[#999999] text-sm mt-3">
+          {stoppingExplanation}
+        </p>
       </div>
 
       <div className="p-6">
@@ -46,44 +45,57 @@ export default function FinalResult({ result, onNewGeneration }) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4 text-center">
-            <div className="text-[#999999] text-sm mb-1">Final Accuracy</div>
+            <div className="text-[#999999] text-sm mb-1">Accuracy Score</div>
             <div
               className="text-3xl font-bold"
               style={{ color: scoreColor }}
             >
-              {finalIteration.score}%
+              {finalIteration.accuracyScore}%
             </div>
             <div className="text-[#666666] text-xs mt-1">
-              {getScoreTier(finalIteration.score)}
+              {getScoreTier(finalIteration.accuracyScore)}
             </div>
           </div>
 
           <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4 text-center">
-            <div className="text-[#999999] text-sm mb-1">Auto-Refinements</div>
+            <div className="text-[#999999] text-sm mb-1">Vision Score</div>
+            <div
+              className="text-3xl font-bold"
+              style={{ color: visionColor }}
+            >
+              {finalIteration.visionScore}%
+            </div>
+            <div className="text-[#666666] text-xs mt-1">
+              Intent Preserved
+            </div>
+          </div>
+
+          <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4 text-center">
+            <div className="text-[#999999] text-sm mb-1">Best Iteration</div>
             <div className="text-3xl font-bold text-[#00d4ff]">
-              {iterations}
+              #{finalIteration.iteration}
             </div>
             <div className="text-[#666666] text-xs mt-1">
-              {iterations < 10 ? 'Target achieved' : 'Work completed'}
+              of {iterations} total
             </div>
           </div>
 
           <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4 text-center">
-            <div className="text-[#999999] text-sm mb-1">Resolution</div>
+            <div className="text-[#999999] text-sm mb-1">Confidence</div>
             <div className="text-3xl font-bold text-white">
-              16:9
+              {Math.round(finalIteration.confidence * 100)}%
             </div>
             <div className="text-[#666666] text-xs mt-1">
-              1344x768 Cinematic
+              Evaluator certainty
             </div>
           </div>
         </div>
 
         <div className="flex gap-4">
           <button
-            onClick={() => downloadImage(finalIteration.image, finalIteration.score, finalIteration.iteration)}
+            onClick={() => downloadImage(finalIteration.image, finalIteration.accuracyScore, finalIteration.iteration)}
             className="flex-1 bg-[#00d4ff] text-[#0a0a0a] font-semibold py-3 rounded-lg hover:bg-[#00bbdd] transition-colors flex items-center justify-center gap-2"
           >
             <Download className="w-5 h-5" />
@@ -136,12 +148,12 @@ export default function FinalResult({ result, onNewGeneration }) {
                 </div>
                 <div className="border-t border-[#333333] pt-3 mt-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-white font-semibold">Total Score</span>
+                    <span className="text-white font-semibold">Accuracy Score</span>
                     <span
                       className="text-lg font-bold"
                       style={{ color: scoreColor }}
                     >
-                      {finalIteration.score}/100
+                      {finalIteration.accuracyScore}/100
                     </span>
                   </div>
                 </div>

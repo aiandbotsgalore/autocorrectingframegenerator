@@ -5,9 +5,10 @@ import { getScoreColor } from '../utils/imageDownload';
 const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
   if (!currentIteration) return null;
 
-  const { iteration, status, image, score, evaluation, correctedPrompt } = currentIteration;
+  const { iteration, status, image, accuracyScore, visionScore, confidence, evaluation, correctedPrompt } = currentIteration;
 
-  const scoreColor = score ? getScoreColor(score) : '#666666';
+  const scoreColor = accuracyScore ? getScoreColor(accuracyScore) : '#666666';
+  const visionColor = visionScore ? getScoreColor(visionScore) : '#666666';
   const isGenerating = status === 'Generating image...';
   const isAnalyzing = status === 'Analyzing quality...';
   const isCorrecting = status === 'Creating correction...';
@@ -17,22 +18,39 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
   return (
     <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6 mb-6 animate-fade-in">
       <div className="border-b border-[#333333] pb-4 mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-white font-bold text-xl flex items-center gap-3">
             <span className="text-[#00d4ff]">ITERATION {iteration}/10</span>
           </h3>
-          {score !== null && (
+        </div>
+        {accuracyScore !== null && visionScore !== null && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div
-              className="px-4 py-2 rounded-lg font-bold text-lg"
+              className="px-4 py-2 rounded-lg font-bold text-center"
               style={{
                 backgroundColor: `${scoreColor}20`,
                 color: scoreColor
               }}
             >
-              ACCURACY: {score}%
+              <div className="text-xs text-[#999999] mb-1">Accuracy</div>
+              <div className="text-lg">{accuracyScore}%</div>
             </div>
-          )}
-        </div>
+            <div
+              className="px-4 py-2 rounded-lg font-bold text-center"
+              style={{
+                backgroundColor: `${visionColor}20`,
+                color: visionColor
+              }}
+            >
+              <div className="text-xs text-[#999999] mb-1">Vision</div>
+              <div className="text-lg">{visionScore}%</div>
+            </div>
+            <div className="px-4 py-2 rounded-lg font-bold text-center bg-[#0a0a0a] text-[#00d4ff]">
+              <div className="text-xs text-[#999999] mb-1">Confidence</div>
+              <div className="text-lg">{Math.round(confidence * 100)}%</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mb-6">
@@ -40,10 +58,10 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
           {(isGenerating || isAnalyzing || isCorrecting || isNextIteration) && (
             <Loader2 className="w-5 h-5 text-[#00d4ff] animate-spin" />
           )}
-          {isComplete && score >= 95 && (
+          {isComplete && accuracyScore >= 95 && (
             <CheckCircle className="w-5 h-5 text-[#00ff88]" />
           )}
-          {isComplete && score < 95 && (
+          {isComplete && accuracyScore < 95 && (
             <AlertCircle className="w-5 h-5 text-[#ffaa00]" />
           )}
           <span className="text-white font-medium">Status: {status}</span>
@@ -95,12 +113,12 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
               </div>
               <div className="border-t border-[#333333] pt-3 mt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white font-semibold">Total Score</span>
+                  <span className="text-white font-semibold">Accuracy Score</span>
                   <span
                     className="text-lg font-bold"
                     style={{ color: scoreColor }}
                   >
-                    {score}/100
+                    {accuracyScore}/100
                   </span>
                 </div>
               </div>

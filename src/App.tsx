@@ -5,14 +5,18 @@ import PromptInput from './components/PromptInput';
 import IterationDisplay from './components/IterationDisplay';
 import IterationHistory from './components/IterationHistory';
 import FinalResult from './components/FinalResult';
-import { autoRefineImage } from './utils/geminiApi';
+import { autoRefineImage } from './core/refinementEngine';
 
 interface Iteration {
   iteration: number;
   image: string;
-  score: number;
+  accuracyScore: number;
+  visionScore: number;
+  confidence: number;
   evaluation: {
-    score: number;
+    accuracyScore: number;
+    visionScore: number;
+    confidence: number;
     issues: string[];
     strengths: string[];
   };
@@ -24,9 +28,13 @@ interface CurrentIteration {
   iteration: number;
   status: string;
   image: string | null;
-  score: number | null;
+  accuracyScore: number | null;
+  visionScore: number | null;
+  confidence: number | null;
   evaluation: {
-    score: number;
+    accuracyScore: number;
+    visionScore: number;
+    confidence: number;
     issues: string[];
     strengths: string[];
   } | null;
@@ -37,6 +45,8 @@ interface FinalResultData {
   success: boolean;
   result: Iteration;
   iterations: number;
+  stoppingReason: string;
+  stoppingExplanation: string;
 }
 
 function App() {
@@ -67,11 +77,11 @@ function App() {
       const result = await autoRefineImage(
         userPrompt,
         apiKey,
-        mode,
+        mode as 'simple' | 'pro',
         (update: CurrentIteration) => {
           setCurrentIteration(update);
 
-          if (update.image && update.score !== null && update.evaluation) {
+          if (update.image && update.accuracyScore !== null && update.evaluation) {
             setIterationHistory((prev) => {
               const existing = prev.find((iter) => iter.iteration === update.iteration);
               if (existing) {
@@ -90,7 +100,9 @@ function App() {
                 {
                   iteration: update.iteration,
                   image: update.image!,
-                  score: update.score!,
+                  accuracyScore: update.accuracyScore!,
+                  visionScore: update.visionScore!,
+                  confidence: update.confidence!,
                   evaluation: update.evaluation!,
                   prompt: '',
                   correctedPrompt: update.correctedPrompt || undefined
