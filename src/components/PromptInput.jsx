@@ -12,11 +12,8 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
     setWordCount(words.length);
   }, [prompt]);
 
-  const minWords = mode === 'simple' ? 30 : 75;
-  const maxWords = mode === 'simple' ? 100 : 150;
-
   const handleSubmit = () => {
-    if (wordCount >= minWords && wordCount <= maxWords) {
+    if (prompt.trim().length > 0) {
       onGenerate(prompt, mode);
     }
   };
@@ -27,8 +24,7 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
     }
   };
 
-  const isValidLength = wordCount >= minWords && wordCount <= maxWords;
-  const showWarning = wordCount > 0 && !isValidLength;
+  const hasContent = prompt.trim().length > 0;
 
   return (
     <div>
@@ -51,7 +47,7 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
             </div>
             <div>
               <h3 id="prompt-label" className="text-white font-semibold text-lg">Image Specification</h3>
-              <p id="prompt-desc" className="text-[#999999] text-sm">{minWords}-{maxWords} words</p>
+              <p id="prompt-desc" className="text-[#999999] text-sm">Describe your vision in any detail</p>
             </div>
           </div>
           <div className="flex gap-2 bg-[#0a0a0a] rounded-lg p-1">
@@ -99,26 +95,15 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
           <div className="flex items-center gap-4" aria-live="polite" id="prompt-feedback">
             <span
               className={`text-sm font-medium ${
-                wordCount === 0
-                  ? 'text-[#666666]'
-                  : isValidLength
-                  ? 'text-[#00ff88]'
-                  : wordCount < minWords
-                  ? 'text-[#ffaa00]'
-                  : 'text-[#ff4444]'
+                wordCount === 0 ? 'text-[#666666]' : 'text-[#00d4ff]'
               }`}
             >
-              {wordCount} / {minWords}-{maxWords} words
+              {wordCount} {wordCount === 1 ? 'word' : 'words'}
             </span>
-            {showWarning && (
-              <span className="text-[#999999] text-sm">
-                {wordCount < minWords ? `Need ${minWords - wordCount} more words` : `${wordCount - maxWords} words over limit`}
-              </span>
-            )}
           </div>
           <button
             onClick={handleSubmit}
-            disabled={!isValidLength || isGenerating || !apiKey}
+            disabled={!hasContent || isGenerating || !apiKey}
             className="px-6 py-3 bg-[#00d4ff] text-[#0a0a0a] font-semibold rounded-lg hover:bg-[#00bbdd] disabled:bg-[#333333] disabled:text-[#666666] disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             <Sparkles className="w-5 h-5" />
