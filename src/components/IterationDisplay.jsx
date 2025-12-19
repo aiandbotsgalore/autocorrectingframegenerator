@@ -15,166 +15,179 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
   const isNextIteration = status === 'Generating next iteration...';
   const isComplete = status === 'Target achieved!' || status === 'Evaluation complete';
 
+  const isActive = status.includes('Generating') || status.includes('Evaluating') || status.includes('Correcting');
+
   return (
-    <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6 mb-6 animate-fade-in">
-      <div className="border-b border-[#333333] pb-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-white font-bold text-xl flex items-center gap-3">
-            <span className="text-[#00d4ff]">ITERATION {iteration}/10</span>
-          </h3>
-        </div>
-        {accuracyScore !== null && visionScore !== null && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div
-              className="px-4 py-2 rounded-lg font-bold text-center"
-              style={{
-                backgroundColor: `${scoreColor}20`,
-                color: scoreColor
-              }}
-            >
-              <div className="text-xs text-[#999999] mb-1">Accuracy</div>
-              <div className="text-lg">{accuracyScore}%</div>
-            </div>
-            <div
-              className="px-4 py-2 rounded-lg font-bold text-center"
-              style={{
-                backgroundColor: `${visionColor}20`,
-                color: visionColor
-              }}
-            >
-              <div className="text-xs text-[#999999] mb-1">Vision</div>
-              <div className="text-lg">{visionScore}%</div>
-            </div>
-            <div className="px-4 py-2 rounded-lg font-bold text-center bg-[#0a0a0a] text-[#00d4ff]">
-              <div className="text-xs text-[#999999] mb-1">Confidence</div>
-              <div className="text-lg">{Math.round(confidence * 100)}%</div>
+    <div className="h-full flex">
+      {/* Left Column: Image */}
+      <div className="flex-1 flex flex-col p-6 overflow-hidden">
+        {/* Status Header */}
+        <div className="mb-4 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {isActive && (
+              <Loader2 className="w-5 h-5 text-[#00d4ff] animate-spin" />
+            )}
+            <div>
+              <h3 className="text-white font-bold text-sm">
+                <span className="text-[#00d4ff]">ITERATION {iteration}/10</span>
+              </h3>
+              <p className="text-[#999999] text-xs mt-0.5">{status}</p>
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          {(isGenerating || isAnalyzing || isCorrecting || isNextIteration) && (
-            <Loader2 className="w-5 h-5 text-[#00d4ff] animate-spin" />
-          )}
-          {isComplete && accuracyScore >= 95 && (
-            <CheckCircle className="w-5 h-5 text-[#00ff88]" />
-          )}
-          {isComplete && accuracyScore < 95 && (
-            <AlertCircle className="w-5 h-5 text-[#ffaa00]" />
-          )}
-          <span className="text-white font-medium">Status: {status}</span>
-        </div>
-
-        {image && (
-          <div className="relative rounded-lg overflow-hidden bg-black mb-6">
-            <img
-              src={image}
-              alt={`Iteration ${iteration}`}
-              className="w-full h-auto object-contain"
-              style={{ aspectRatio: '16/9' }}
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-              <p className="text-[#999999] text-sm">16:9 Cinematic (1344x768)</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {evaluation && (
-        <div className="space-y-4">
-          <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-4">
-            <h4 className="text-white font-semibold mb-3">Evaluation Criteria</h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#999999]">Subject Accuracy</span>
-                <span className="text-[#666666]">0-20 pts</span>
+          {accuracyScore !== null && visionScore !== null && (
+            <div className="flex gap-2">
+              <div className="px-3 py-1.5 rounded-lg text-center bg-[#1a1a1a] border border-[#333333]">
+                <div className="text-xs text-[#666666]">Acc</div>
+                <div className="text-sm font-bold" style={{ color: scoreColor }}>
+                  {accuracyScore}%
+                </div>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#999999]">Composition & Framing</span>
-                <span className="text-[#666666]">0-20 pts</span>
+              <div className="px-3 py-1.5 rounded-lg text-center bg-[#1a1a1a] border border-[#333333]">
+                <div className="text-xs text-[#666666]">Vis</div>
+                <div className="text-sm font-bold" style={{ color: visionColor }}>
+                  {visionScore}%
+                </div>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#999999]">Lighting Quality</span>
-                <span className="text-[#666666]">0-20 pts</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#999999]">Color Palette</span>
-                <span className="text-[#666666]">0-20 pts</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#999999]">Style & Mood</span>
-                <span className="text-[#666666]">0-10 pts</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#999999]">Specific Details</span>
-                <span className="text-[#666666]">0-10 pts</span>
-              </div>
-              <div className="border-t border-[#333333] pt-3 mt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-white font-semibold">Accuracy Score</span>
-                  <span
-                    className="text-lg font-bold"
-                    style={{ color: scoreColor }}
-                  >
-                    {accuracyScore}/100
-                  </span>
+              <div className="px-3 py-1.5 rounded-lg text-center bg-[#1a1a1a] border border-[#333333]">
+                <div className="text-xs text-[#666666]">Conf</div>
+                <div className="text-sm font-bold text-white">
+                  {Math.round(confidence * 100)}%
                 </div>
               </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          <div className="bg-[#0a0a0a] border border-[#00ff88]/20 rounded-lg p-4">
-            <h4 className="text-[#00ff88] font-semibold mb-3 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" />
-              STRENGTHS:
-            </h4>
-            <ul className="space-y-2">
-              {evaluation.strengths.map((strength, index) => (
-                <li key={index} className="text-[#999999] text-sm flex items-start gap-2">
-                  <span className="text-[#00ff88] mt-0.5">•</span>
-                  <span>{strength}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {evaluation.issues.length > 0 && (
-            <div className="bg-[#0a0a0a] border border-[#ffaa00]/20 rounded-lg p-4">
-              <h4 className="text-[#ffaa00] font-semibold mb-3 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                ISSUES IDENTIFIED:
-              </h4>
-              <ul className="space-y-2">
-                {evaluation.issues.map((issue, index) => (
-                  <li key={index} className="text-[#999999] text-sm flex items-start gap-2">
-                    <span className="text-[#ffaa00] mt-0.5">•</span>
-                    <span>{issue}</span>
-                  </li>
-                ))}
-              </ul>
+        {/* Image Container */}
+        <div className="flex-1 flex items-center justify-center">
+          {image ? (
+            <div className="relative rounded-lg overflow-hidden bg-black shadow-2xl w-full" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+              <img
+                src={image}
+                alt={`Iteration ${iteration}`}
+                className="w-full h-full object-contain"
+                style={{ aspectRatio: '16/9' }}
+              />
+              <div className="absolute top-4 right-4 bg-black/80 backdrop-blur px-3 py-1.5 rounded-lg">
+                <p className="text-[#00d4ff] text-xs font-semibold">16:9 CINEMATIC</p>
+              </div>
+              {isActive && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <div className="bg-black/80 backdrop-blur px-4 py-3 rounded-lg flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 text-[#00d4ff] animate-spin" />
+                    <span className="text-white text-sm font-semibold">{status}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-64 w-full bg-[#1a1a1a] rounded-lg border-2 border-dashed border-[#333333]">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 text-[#00d4ff] animate-spin mx-auto mb-3" />
+                <p className="text-[#999999] text-sm">{status}</p>
+              </div>
             </div>
           )}
         </div>
-      )}
 
-      {correctedPrompt && (
-        <div className="mt-6 bg-[#0a0a0a] border border-[#00d4ff]/20 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Loader2 className="w-4 h-4 text-[#00d4ff] animate-spin" />
-            <h4 className="text-[#00d4ff] font-semibold">CORRECTION IN PROGRESS</h4>
+        {correctedPrompt && (
+          <div className="mt-4 bg-[#1a1a1a] border border-[#00d4ff]/20 rounded-lg p-3 flex-shrink-0">
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="w-3.5 h-3.5 text-[#00d4ff] animate-spin" />
+              <h4 className="text-[#00d4ff] font-semibold text-xs">CORRECTION IN PROGRESS</h4>
+            </div>
+            <p className="text-[#999999] text-xs leading-relaxed font-mono bg-black/50 p-2 rounded">
+              {correctedPrompt}
+            </p>
           </div>
-          <p className="text-[#999999] text-sm mb-3">
-            CORRECTED PROMPT FOR ITERATION {iteration + 1}:
-          </p>
-          <p className="text-white text-sm font-mono bg-black/50 p-3 rounded leading-relaxed">
-            {correctedPrompt}
-          </p>
-          <p className="text-[#666666] text-xs mt-3 flex items-center gap-2">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            Generating next iteration automatically in 2 seconds...
-          </p>
+        )}
+      </div>
+
+      {/* Right Column: Evaluation Details */}
+      {evaluation && (
+        <div className="w-[420px] border-l border-[#333333] flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 bg-[#0a0a0a]">
+            <div className="space-y-3">
+              {/* Evaluation Breakdown */}
+              <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-3">
+                <h4 className="text-white font-semibold text-xs mb-3">Evaluation Breakdown</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#999999]">Subject Accuracy</span>
+                    <span className="text-[#666666]">0-20 pts</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#999999]">Composition</span>
+                    <span className="text-[#666666]">0-20 pts</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#999999]">Lighting</span>
+                    <span className="text-[#666666]">0-20 pts</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#999999]">Color Palette</span>
+                    <span className="text-[#666666]">0-20 pts</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#999999]">Style & Mood</span>
+                    <span className="text-[#666666]">0-10 pts</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#999999]">Details</span>
+                    <span className="text-[#666666]">0-10 pts</span>
+                  </div>
+                  <div className="border-t border-[#333333] pt-2 mt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-semibold text-xs">Total</span>
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: scoreColor }}
+                      >
+                        {accuracyScore}/100
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Strengths */}
+              {evaluation.strengths && evaluation.strengths.length > 0 && (
+                <div className="bg-[#1a1a1a] border border-[#00ff88]/20 rounded-lg p-3">
+                  <h4 className="text-[#00ff88] font-semibold text-xs mb-2 flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    STRENGTHS
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {evaluation.strengths.map((strength, index) => (
+                      <li key={index} className="text-[#999999] text-xs flex items-start gap-1.5">
+                        <span className="text-[#00ff88] mt-0.5">•</span>
+                        <span className="flex-1">{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Issues */}
+              {evaluation.issues && evaluation.issues.length > 0 && (
+                <div className="bg-[#1a1a1a] border border-[#ffaa00]/20 rounded-lg p-3">
+                  <h4 className="text-[#ffaa00] font-semibold text-xs mb-2 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    ISSUES IDENTIFIED
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {evaluation.issues.map((issue, index) => (
+                      <li key={index} className="text-[#999999] text-xs flex items-start gap-1.5">
+                        <span className="text-[#ffaa00] mt-0.5">•</span>
+                        <span className="flex-1">{issue}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

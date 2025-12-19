@@ -3,7 +3,6 @@ import { Film, Sparkles } from 'lucide-react';
 import ApiKeyInput from './components/ApiKeyInput';
 import PromptInput from './components/PromptInput';
 import IterationDisplay from './components/IterationDisplay';
-import IterationHistory from './components/IterationHistory';
 import FinalResult from './components/FinalResult';
 import { autoRefineImage } from './core/refinementEngine';
 
@@ -141,42 +140,48 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <header className="text-center mb-12">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00d4ff] to-[#0088ff] flex items-center justify-center">
-              <Film className="w-8 h-8 text-white" />
+    <div className="h-screen bg-[#0a0a0a] text-white flex flex-col overflow-hidden">
+      {/* Compact Header */}
+      <header className="border-b border-[#333333] bg-[#0a0a0a] flex-shrink-0">
+        <div className="max-w-full px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4ff] to-[#0088ff] flex items-center justify-center">
+                <Film className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-white">
+                  Auto-Correcting Frame Generator
+                </h1>
+                <div className="flex items-center gap-2 text-xs text-[#666666]">
+                  <Sparkles className="w-3 h-3 text-[#00d4ff]" />
+                  <span>Gemini 2.5 Flash Image</span>
+                  <span>•</span>
+                  <span>16:9 Cinematic</span>
+                </div>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#00d4ff] to-white bg-clip-text text-transparent">
-              Auto-Correcting Music Video Frame Generator
-            </h1>
+            <ApiKeyInput apiKey={apiKey} onApiKeyChange={setApiKey} />
           </div>
-          <div className="flex items-center justify-center gap-3 text-[#999999]">
-            <span className="flex items-center gap-1">
-              <Sparkles className="w-4 h-4 text-[#00d4ff]" />
-              Gemini 2.5 Flash Image
-            </span>
-            <span>•</span>
-            <span>16:9 Cinematic</span>
-            <span>•</span>
-            <span>Powered by Google AI</span>
-          </div>
-        </header>
+        </div>
+      </header>
 
-        <ApiKeyInput apiKey={apiKey} onApiKeyChange={setApiKey} />
-
-        {apiKey && !finalResult && (
-          <PromptInput
-            onGenerate={handleGenerate}
-            isGenerating={isGenerating}
-            apiKey={apiKey}
-          />
-        )}
-
-        {error && (
-          <div className="bg-[#ff4444]/10 border border-[#ff4444] rounded-lg p-4 mb-6">
-            <p className="text-[#ff4444] font-medium">Error: {error}</p>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-hidden">
+        {apiKey && !finalResult && !currentIteration && (
+          <div className="h-full flex items-center justify-center px-6">
+            <div className="max-w-3xl w-full">
+              <PromptInput
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                apiKey={apiKey}
+              />
+              {error && (
+                <div className="bg-[#ff4444]/10 border border-[#ff4444] rounded-lg p-4 mt-4">
+                  <p className="text-[#ff4444] font-medium">Error: {error}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -185,24 +190,12 @@ function App() {
         )}
 
         {finalResult && (
-          <FinalResult result={finalResult} onNewGeneration={handleNewGeneration} />
-        )}
-
-        {iterationHistory.length > 0 && (
-          <IterationHistory
-            iterations={iterationHistory}
-            isGenerating={isGenerating}
+          <FinalResult
+            result={finalResult}
+            onNewGeneration={handleNewGeneration}
+            iterationHistory={iterationHistory}
           />
         )}
-
-        <footer className="text-center mt-12 pt-8 border-t border-[#333333]">
-          <p className="text-[#666666] text-sm">
-            Built with React, Vite, Tailwind CSS, and Google Generative AI
-          </p>
-          <p className="text-[#666666] text-sm mt-2">
-            All images are generated at 16:9 cinematic aspect ratio (1344x768)
-          </p>
-        </footer>
       </div>
     </div>
   );
