@@ -7,9 +7,13 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
 
   if (!result) return null;
 
-  const { success, result: finalIteration, iterations, stoppingReason, stoppingExplanation } = result;
-  const scoreColor = getScoreColor(finalIteration.accuracyScore);
+  const { success, result: finalIteration, iterations, stoppingReason, stoppingExplanation, summary } = result;
+  const qualityPercent = summary?.qualityPercent ?? finalIteration.qualityScore ?? Math.round(finalIteration.accuracyScore * 0.4 + finalIteration.visionScore * 0.4 + finalIteration.confidence * 20);
+  const bestIterationIndex = summary?.bestIterationIndex ?? finalIteration.iteration;
+  const scoreColor = getScoreColor(qualityPercent);
   const visionColor = getScoreColor(finalIteration.visionScore);
+  const accuracyColor = getScoreColor(finalIteration.accuracyScore);
+  const userMessage = summary?.userMessage ?? stoppingExplanation;
 
   return (
     <div className="h-full flex">
@@ -62,21 +66,37 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle className="w-5 h-5" style={{ color: scoreColor }} />
             <h2 className="text-white font-bold text-sm">
-              {success ? 'TARGET ACHIEVED' : 'REFINEMENT COMPLETE'}
+              Quality Score: {qualityPercent}%
             </h2>
           </div>
-          <p className="text-[#999999] text-xs leading-relaxed">
-            {stoppingExplanation}
+          <p className="text-[#999999] text-xs leading-relaxed mb-1">
+            {userMessage}
+          </p>
+          <p className="text-[#666666] text-xs">
+            Best result from iteration #{bestIterationIndex} of {iterations}. Reason: {stoppingReason}
           </p>
         </div>
 
         {/* Scores Grid */}
         <div className="grid grid-cols-2 gap-2 p-4 border-b border-[#333333] flex-shrink-0">
           <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-3 text-center">
-            <div className="text-[#999999] text-xs mb-1">Accuracy</div>
+            <div className="text-[#999999] text-xs mb-1">Quality</div>
             <div
               className="text-2xl font-bold"
               style={{ color: scoreColor }}
+            >
+              {qualityPercent}%
+            </div>
+            <div className="text-[#666666] text-xs mt-1">
+              {getScoreTier(qualityPercent)}
+            </div>
+          </div>
+
+          <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-3 text-center">
+            <div className="text-[#999999] text-xs mb-1">Accuracy</div>
+            <div
+              className="text-2xl font-bold"
+              style={{ color: accuracyColor }}
             >
               {finalIteration.accuracyScore}%
             </div>
@@ -95,16 +115,6 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
             </div>
             <div className="text-[#666666] text-xs mt-1">
               Preserved
-            </div>
-          </div>
-
-          <div className="bg-[#0a0a0a] border border-[#333333] rounded-lg p-3 text-center">
-            <div className="text-[#999999] text-xs mb-1">Iteration</div>
-            <div className="text-2xl font-bold text-[#00d4ff]">
-              #{finalIteration.iteration}
-            </div>
-            <div className="text-[#666666] text-xs mt-1">
-              of {iterations}
             </div>
           </div>
 
@@ -236,7 +246,7 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
                   <div
                     key={iter.iteration}
                     className={`bg-[#1a1a1a] border rounded-lg p-3 transition-colors ${
-                      iter.iteration === finalIteration.iteration
+                      iter.iteration === bestIterationIndex
                         ? 'border-[#00d4ff] bg-[#00d4ff]/5'
                         : 'border-[#333333] hover:border-[#444444]'
                     }`}
@@ -253,7 +263,7 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
                           <span className="text-white font-semibold text-xs">
                             Iteration #{iter.iteration}
                           </span>
-                          {iter.iteration === finalIteration.iteration && (
+                          {iter.iteration === bestIterationIndex && (
                             <span className="text-[#00d4ff] text-xs font-semibold">BEST</span>
                           )}
                         </div>

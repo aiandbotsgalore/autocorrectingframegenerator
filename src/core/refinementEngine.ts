@@ -23,6 +23,8 @@ import {
   isAcceptable,
   sanitizePrompt,
   calculateSimilarity,
+  computeQualityScore,
+  classifyIssues,
 } from './utils';
 
 import * as CONFIG from './constants';
@@ -95,6 +97,8 @@ export async function startRefinementSession(
     remainingRewriteBudget: CONFIG.REWRITE_BUDGET,
     lowConfidenceStreak: 0,
     consecutiveRegenerations: 0,
+    issueHistory: {},
+    initialVision: undefined,
   };
 }
 
@@ -145,10 +149,18 @@ export async function runIteration(
     apiKey
   );
 
+  evaluation.issuesRaw = evaluation.issues;
+
   // Calculate prompt similarity to detect drift
   const promptSimilarity = calculateSimilarity(
     session.userPrompt,
     session.currentPrompt
+  );
+
+  const qualityScore = computeQualityScore(
+    evaluation.accuracyScore,
+    evaluation.visionScore,
+    evaluation.confidence
   );
 
   const result: import('./types').RefinementIteration = {
@@ -157,14 +169,48 @@ export async function runIteration(
     accuracyScore: evaluation.accuracyScore,
     visionScore: evaluation.visionScore,
     confidence: evaluation.confidence,
+    qualityScore,
     evaluation,
     prompt: session.currentPrompt,
     promptSimilarity,
     isAccepted: false, // Will be set by acceptance check
   };
 
+  const improved = !session.bestSeenResult || compareResults(result, session.bestSeenResult) === 'a';
+  const issueClassification = classifyIssues(evaluation.issues || [], {
+    confidence: evaluation.confidence,
+    priorEvals: session.iterations.flatMap(iter => iter.evaluation.issues || []),
+    issueHistory: session.issueHistory,
+    markNoImprovement: !improved,
+  });
+
+  result.issuesActionable = issueClassification.actionable;
+  result.issuesNonActionable = issueClassification.nonActionable;
+  result.issuesNoise = issueClassification.noise;
+
   // Check if result passes acceptance criteria
-  result.isAccepted = isAcceptable(result, true, CONFIG.SIMILARITY_FLOOR);
+  result.isAccepted = isAcceptable(
+    result,
+    true,
+    CONFIG.SIMILARITY_FLOOR,
+    session.initialVision,
+    session.bestAcceptedResult || undefined
+  );
+
+  if (session.initialVision === undefined) {
+    session.initialVision = result.visionScore;
+  }
+
+  result.auditLog = {
+    qualityScore: result.qualityScore || 0,
+    actionableCount: issueClassification.actionable.length,
+    nonActionableCount: issueClassification.nonActionable.length,
+    noiseCount: issueClassification.noise.length,
+    decisionTaken: result.isAccepted ? 'accept' : 'reject',
+    refinementUsed: false,
+    promptChanges: [],
+    stopTriggered: false,
+  };
 
   // Update with scores
   const progressStatus = getProgressStatus(evaluation);
@@ -190,133 +236,81 @@ export function decideNextAction(
   currentIteration: import('./types').RefinementIteration
 ): import('./types').NextActionDecision {
   const { iterations, bestAcceptedResult, remainingRewriteBudget, lowConfidenceStreak } = session;
-  const { visionScore } = currentIteration;
+  const totalIssues = (currentIteration.evaluation.issues || []).length;
+  const actionableCount = currentIteration.issuesActionable?.length ?? totalIssues;
+  const nonActionableCount = currentIteration.issuesNonActionable?.length ?? 0;
+  const noiseCount = currentIteration.issuesNoise?.length ?? 0;
+  const qualityScore = currentIteration.qualityScore ?? computeQualityScore(
+    currentIteration.accuracyScore,
+    currentIteration.visionScore,
+    currentIteration.confidence
+  );
+  const refinementsUsed = CONFIG.REWRITE_BUDGET - remainingRewriteBudget;
 
-  // 1. CHECK TARGET ACHIEVED
-  // Best accepted result meets both accuracy and vision targets
-  if (
-    bestAcceptedResult &&
-    bestAcceptedResult.accuracyScore >= CONFIG.TARGET_ACCURACY &&
-    bestAcceptedResult.visionScore >= CONFIG.MIN_VISION
-  ) {
-    return {
-      shouldContinue: false,
-      action: 'stop',
-      reason: 'target_achieved',
-      explanation: 'Target quality thresholds achieved',
-    };
+  if (qualityScore >= CONFIG.TARGET_QUALITY) {
+    return { shouldContinue: false, action: 'stop', reason: 'target_achieved', explanation: 'Quality threshold met' };
   }
 
-  // 2. CHECK VISION RISK
-  // Current vision score dangerously low (prevents further vision drift)
-  if (visionScore < CONFIG.MIN_VISION) {
-    return {
-      shouldContinue: false,
-      action: 'stop',
-      reason: 'vision_risk_prevented',
-      explanation: 'Stopping to protect original vision from further drift',
-    };
+  if (currentIteration.visionScore < CONFIG.MIN_VISION) {
+    return { shouldContinue: false, action: 'stop', reason: 'vision_risk_prevented', explanation: 'Vision dropped below minimum' };
   }
 
-  // 3. CHECK LOW CONFIDENCE STALL
-  // Persistent low confidence suggests unclear target or model limitation
-  if (lowConfidenceStreak >= CONFIG.LOW_CONFIDENCE_STREAK_STOP) {
-    return {
-      shouldContinue: false,
-      action: 'stop',
-      reason: 'low_confidence_stall',
-      explanation: 'Evaluator confidence persistently low - target may be unclear',
-    };
+  if (actionableCount === 0) {
+    if (session.consecutiveRegenerations < 1) {
+      return { shouldContinue: true, action: 'regenerate', reason: null, explanation: 'No actionable issues - regenerate once' };
+    }
+    return { shouldContinue: false, action: 'stop', reason: 'non_actionable_only', explanation: 'Only non-actionable issues remain' };
   }
 
-  // 4. CHECK PLATEAU (DIMINISHING RETURNS)
-  // Check accepted iterations only for plateau
-  const acceptedIterations = iterations.filter(iter => iter.isAccepted);
-  if (acceptedIterations.length >= CONFIG.PLATEAU_WINDOW + 1) {
-    const recentAccepted = acceptedIterations.slice(-CONFIG.PLATEAU_WINDOW);
-    const improvements = recentAccepted.map((iter, idx) => {
+  if (totalIssues > 0 && (nonActionableCount + noiseCount) / totalIssues > 0.7) {
+    return { shouldContinue: false, action: 'stop', reason: 'non_actionable_only', explanation: 'Issues are predominantly non-actionable' };
+  }
+
+  const recentIterations = iterations.slice(-3);
+  if (recentIterations.length === 3) {
+    const deltas = recentIterations.map((iter, idx) => {
       if (idx === 0) return 0;
-      return iter.accuracyScore - recentAccepted[idx - 1].accuracyScore;
+      const prevQuality = iter.qualityScore ?? computeQualityScore(iter.accuracyScore, iter.visionScore, iter.confidence);
+      const lastQuality = recentIterations[idx - 1].qualityScore ?? computeQualityScore(
+        recentIterations[idx - 1].accuracyScore,
+        recentIterations[idx - 1].visionScore,
+        recentIterations[idx - 1].confidence
+      );
+      return prevQuality - lastQuality;
     });
 
-    const isPlateau = improvements.every(delta => Math.abs(delta) < CONFIG.MIN_ACCURACY_DELTA);
-
+    const isPlateau = deltas.slice(1).every(delta => Math.abs(delta) <= CONFIG.MIN_QUALITY_IMPROVEMENT);
     if (isPlateau) {
-      return {
-        shouldContinue: false,
-        action: 'stop',
-        reason: 'diminishing_returns',
-        explanation: 'Plateau detected - no meaningful improvement in recent iterations',
-      };
+      return { shouldContinue: false, action: 'stop', reason: 'diminishing_returns', explanation: 'Diminishing returns detected' };
     }
   }
 
-  // 5. CHECK REWRITE BUDGET EXHAUSTION
-  // Budget exhausted AND no improvement in recent accepted iterations
-  if (remainingRewriteBudget <= 0) {
-    if (acceptedIterations.length >= CONFIG.PLATEAU_WINDOW) {
-      const recentAccepted = acceptedIterations.slice(-CONFIG.PLATEAU_WINDOW);
-      const hasImprovement = recentAccepted.some((iter, idx) => {
-        if (idx === 0) return false;
-        return iter.accuracyScore > recentAccepted[idx - 1].accuracyScore + CONFIG.MIN_ACCURACY_DELTA;
-      });
-
-      if (!hasImprovement) {
-        return {
-          shouldContinue: false,
-          action: 'stop',
-          reason: 'rewrite_budget_exhausted',
-          explanation: 'Rewrite budget exhausted without further improvement',
-        };
-      }
-    }
+  if (lowConfidenceStreak >= CONFIG.LOW_CONFIDENCE_STREAK_STOP) {
+    return { shouldContinue: false, action: 'stop', reason: 'low_confidence_stall', explanation: 'Persistent low confidence' };
   }
 
-  // 6. CHECK MAX ITERATIONS
   if (iterations.length >= CONFIG.MAX_ITERATIONS) {
-    // Check if we have any acceptable result
     if (!bestAcceptedResult) {
-      return {
-        shouldContinue: false,
-        action: 'stop',
-        reason: 'no_acceptable_result',
-        explanation: 'Max iterations reached without achieving acceptable result',
-      };
+      return { shouldContinue: false, action: 'stop', reason: 'no_acceptable_result', explanation: 'Max iterations with no acceptable result' };
     }
-
-    return {
-      shouldContinue: false,
-      action: 'stop',
-      reason: 'max_iterations_reached',
-      explanation: 'Maximum iterations reached - returning best result',
-    };
+    return { shouldContinue: false, action: 'stop', reason: 'max_iterations_reached', explanation: 'Iteration limit reached' };
   }
 
-  // 7. CHECK MODEL LIMITATION (persistent low confidence across all attempts)
-  if (iterations.length >= 5) {
-    const allConfidence = iterations.map(iter => iter.confidence);
-    const avgConfidence = allConfidence.reduce((a, b) => a + b, 0) / allConfidence.length;
-
-    if (avgConfidence < CONFIG.MIN_CONFIDENCE) {
-      return {
-        shouldContinue: false,
-        action: 'stop',
-        reason: 'model_limitation_inferred',
-        explanation: 'Persistent low confidence suggests model capability limits',
-      };
-    }
+  if (refinementsUsed >= CONFIG.MAX_REFINES || remainingRewriteBudget <= 0) {
+    return { shouldContinue: false, action: 'stop', reason: 'rewrite_budget_exhausted', explanation: 'Refinement budget exhausted' };
   }
 
-  // CONTINUE: Decide between regeneration and refinement
   const shouldRegenerate = shouldRegenerateNotRefine(
     currentIteration,
     iterations,
     session.consecutiveRegenerations
   );
 
+  const canRefine = actionableCount > 0 && currentIteration.confidence >= 0.7 && remainingRewriteBudget > 0;
+
   return {
     shouldContinue: true,
-    action: shouldRegenerate ? 'regenerate' : 'refine',
+    action: shouldRegenerate || !canRefine ? 'regenerate' : 'refine',
     reason: null,
   };
 }
@@ -373,6 +367,14 @@ export function updateBestResults(
   session: import('./types').RefinementSession,
   currentIteration: import('./types').RefinementIteration
 ): void {
+  if (!currentIteration.qualityScore) {
+    currentIteration.qualityScore = computeQualityScore(
+      currentIteration.accuracyScore,
+      currentIteration.visionScore,
+      currentIteration.confidence
+    );
+  }
+
   // Update bestSeenResult (best raw scores, no acceptance check)
   if (!session.bestSeenResult) {
     session.bestSeenResult = currentIteration;
@@ -411,6 +413,10 @@ export async function generateNextPrompt(
     // Use the same prompt - no budget consumed
     currentIteration.action = 'regenerate';
     session.consecutiveRegenerations++;
+    if (currentIteration.auditLog) {
+      currentIteration.auditLog.refinementUsed = false;
+      currentIteration.auditLog.promptChanges = [];
+    }
     return session.currentPrompt;
   }
 
@@ -453,6 +459,10 @@ export async function generateNextPrompt(
   const sanitizedPrompt = sanitizePrompt(rawCorrectedPrompt, session.intentAnchor);
 
   currentIteration.correctedPrompt = sanitizedPrompt;
+  if (currentIteration.auditLog) {
+    currentIteration.auditLog.refinementUsed = true;
+    currentIteration.auditLog.promptChanges = [sanitizedPrompt.slice(0, 180)];
+  }
 
   // Update with corrected prompt
   onUpdate({
@@ -482,6 +492,27 @@ export function completeSession(
 
   // Use bestAcceptedResult if available, otherwise fall back to bestSeenResult
   const bestResult = session.bestAcceptedResult || session.bestSeenResult!;
+  if (!bestResult.qualityScore) {
+    bestResult.qualityScore = computeQualityScore(
+      bestResult.accuracyScore,
+      bestResult.visionScore,
+      bestResult.confidence
+    );
+  }
+
+  const rejectedHigherScore = Boolean(
+    session.bestAcceptedResult &&
+    session.bestSeenResult &&
+    (session.bestSeenResult.qualityScore ?? 0) > (session.bestAcceptedResult.qualityScore ?? 0) &&
+    session.bestSeenResult.iteration !== session.bestAcceptedResult.iteration
+  );
+
+  const rejectionExplanation = rejectedHigherScore
+    ? 'A higher-scoring iteration was rejected due to acceptance criteria.'
+    : undefined;
+
+  const userMessage = `Auto refinement complete. Best result achieved at iteration ${bestResult.iteration} with ${bestResult.qualityScore}% quality. Stopped due to ${stoppingReason}.${rejectionExplanation ? ' ' + rejectionExplanation : ''}`;
+
   const explanation = getStoppingExplanation(stoppingReason, bestResult, session.iterations.length);
 
   return {
@@ -490,6 +521,13 @@ export function completeSession(
     iterations: session.iterations.length,
     stoppingReason,
     stoppingExplanation: explanation,
+    summary: {
+      userMessage,
+      bestIterationIndex: bestResult.iteration,
+      qualityPercent: bestResult.qualityScore ?? 0,
+      rejectedHigherScore,
+      rejectionExplanation,
+    },
   };
 }
 
@@ -542,6 +580,9 @@ function getStoppingExplanation(
     case 'rewrite_budget_exhausted':
       return `Rewrite budget exhausted without further improvement. The system attempted ${CONFIG.REWRITE_BUDGET} refinements. Best achieved: ${acc}% accuracy, ${vis}% vision (${conf}% confidence).`;
 
+    case 'non_actionable_only':
+      return `Stopped because remaining issues were non-actionable or unverifiable. Best achieved: ${acc}% accuracy, ${vis}% vision (${conf}% confidence).`;
+
     case 'model_limitation_inferred':
       return `Model capability limits detected. Average confidence remained low across ${totalIterations} iterations, suggesting the target exceeds current model capabilities. Best effort: ${acc}% accuracy.`;
 
@@ -593,6 +634,12 @@ export async function autoRefineImage(
 
     // Decide next action (includes all stopping conditions)
     const decision = decideNextAction(session, currentIteration);
+    currentIteration.decisionTaken = decision.action;
+    currentIteration.decisionReason = decision.reason || decision.explanation || undefined;
+    if (currentIteration.auditLog) {
+      currentIteration.auditLog.decisionTaken = decision.action;
+      currentIteration.auditLog.stopTriggered = !decision.shouldContinue;
+    }
 
     if (!decision.shouldContinue) {
       // Complete session with explanation
