@@ -29,6 +29,18 @@ export const MAX_REGENERATIONS_PER_ITERATION = 2;
  */
 export const REWRITE_BUDGET = 6;
 
+/**
+ * Maximum number of refinements allowed in a single session.
+ * Protects against endless prompt churn when issues are non-actionable.
+ */
+export const MAX_REFINES = 3;
+
+/**
+ * Quality score threshold (0-100) that allows early stop when achieved.
+ * Uses fixed computeQualityScore weights in utils.
+ */
+export const TARGET_QUALITY = 90;
+
 // ===========================
 // TARGET THRESHOLDS
 // ===========================
@@ -84,6 +96,12 @@ export const PLATEAU_WINDOW = 2;
  */
 export const MIN_ACCURACY_DELTA = 2;
 
+/**
+ * Minimum qualityScore improvement (%) to continue refining.
+ * Prevents chasing noise when improvements are marginal.
+ */
+export const MIN_QUALITY_IMPROVEMENT = 1;
+
 // ===========================
 // PROMPT CONSTRAINTS
 // ===========================
@@ -92,7 +110,7 @@ export const MIN_ACCURACY_DELTA = 2;
  * Maximum words allowed in refined prompts.
  * Prevents prompt bloat that can confuse the generator.
  */
-export const PROMPT_WORD_CAP = 140;
+export const PROMPT_WORD_CAP = 90;
 
 /**
  * Minimum words required in refined prompts.
@@ -191,3 +209,17 @@ export const STOP_WORDS = new Set([
  * Prevents API rate limiting and allows time for UI updates.
  */
 export const ITERATION_DELAY_MS = 2000;
+
+// ===========================
+// QUALITY SCORE WEIGHTS
+// ===========================
+
+/**
+ * Fixed weights for quality score calculation.
+ * Do not alter without updating regression expectations.
+ */
+export const QUALITY_CONFIG = {
+  accuracyWeight: 0.4,
+  visionWeight: 0.4,
+  confidenceWeight: 0.2,
+};

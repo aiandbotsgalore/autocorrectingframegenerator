@@ -56,6 +56,7 @@ function createMockSession(userPrompt: string): RefinementSession {
     remainingRewriteBudget: CONFIG.REWRITE_BUDGET,
     lowConfidenceStreak: 0,
     consecutiveRegenerations: 0,
+    issueHistory: {},
   };
 }
 

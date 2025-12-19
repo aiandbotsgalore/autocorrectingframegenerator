@@ -5,6 +5,12 @@ import PromptInput from './components/PromptInput';
 import IterationDisplay from './components/IterationDisplay';
 import FinalResult from './components/FinalResult';
 import { autoRefineImage } from './core/refinementEngine';
+import type { ComponentType } from 'react';
+
+const TypedApiKeyInput = ApiKeyInput as ComponentType<any>;
+const TypedPromptInput = PromptInput as ComponentType<any>;
+const TypedIterationDisplay = IterationDisplay as ComponentType<any>;
+const TypedFinalResult = FinalResult as ComponentType<any>;
 
 interface Iteration {
   iteration: number;
@@ -12,6 +18,7 @@ interface Iteration {
   accuracyScore: number;
   visionScore: number;
   confidence: number;
+  qualityScore?: number;
   evaluation: {
     accuracyScore: number;
     visionScore: number;
@@ -30,6 +37,7 @@ interface CurrentIteration {
   accuracyScore: number | null;
   visionScore: number | null;
   confidence: number | null;
+  qualityScore?: number | null;
   evaluation: {
     accuracyScore: number;
     visionScore: number;
@@ -46,6 +54,13 @@ interface FinalResultData {
   iterations: number;
   stoppingReason: string;
   stoppingExplanation: string;
+  summary?: {
+    userMessage: string;
+    bestIterationIndex: number;
+    qualityPercent: number;
+    rejectedHigherScore: boolean;
+    rejectionExplanation?: string;
+  };
 }
 
 function App() {
@@ -81,14 +96,22 @@ function App() {
           setCurrentIteration(update);
 
           if (update.image && update.accuracyScore !== null && update.evaluation) {
+            const qualityScore =
+              update.qualityScore ??
+              (update.accuracyScore !== null &&
+              update.visionScore !== null &&
+              update.confidence !== null
+                ? Math.round(update.accuracyScore * 0.4 + update.visionScore * 0.4 + update.confidence * 20)
+                : undefined);
+
             setIterationHistory((prev) => {
               const existing = prev.find((iter) => iter.iteration === update.iteration);
               if (existing) {
                 // Update existing iteration with corrected prompt if available
-                if (update.correctedPrompt) {
+                if (update.correctedPrompt || qualityScore !== undefined) {
                   return prev.map((iter) =>
                     iter.iteration === update.iteration
-                      ? { ...iter, correctedPrompt: update.correctedPrompt || undefined }
+                      ? { ...iter, correctedPrompt: update.correctedPrompt || iter.correctedPrompt, qualityScore: qualityScore ?? iter.qualityScore }
                       : iter
                   );
                 }
@@ -102,6 +125,7 @@ function App() {
                   accuracyScore: update.accuracyScore!,
                   visionScore: update.visionScore!,
                   confidence: update.confidence!,
+                  qualityScore,
                   evaluation: update.evaluation!,
                   prompt: '',
                   correctedPrompt: update.correctedPrompt || undefined
@@ -161,17 +185,17 @@ function App() {
                 </div>
               </div>
             </div>
-            <ApiKeyInput apiKey={apiKey} onApiKeyChange={setApiKey} />
+            <TypedApiKeyInput apiKey={apiKey} onApiKeyChange={setApiKey} />
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         {apiKey && !finalResult && !currentIteration && (
           <div className="h-full flex items-center justify-center px-6">
             <div className="max-w-3xl w-full">
-              <PromptInput
+              <TypedPromptInput
                 onGenerate={handleGenerate}
                 isGenerating={isGenerating}
                 apiKey={apiKey}
@@ -186,11 +210,11 @@ function App() {
         )}
 
         {currentIteration && !finalResult && (
-          <IterationDisplay currentIteration={currentIteration} />
+          <TypedIterationDisplay currentIteration={currentIteration} />
         )}
 
         {finalResult && (
-          <FinalResult
+          <TypedFinalResult
             result={finalResult}
             onNewGeneration={handleNewGeneration}
             iterationHistory={iterationHistory}

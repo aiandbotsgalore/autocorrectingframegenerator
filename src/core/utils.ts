@@ -12,11 +12,29 @@ import {
   MAX_CORE_KEYWORDS,
   PROMPT_WORD_CAP,
   PROMPT_WORD_MIN,
-  MIN_VISION,
   MIN_CONFIDENCE,
-  VISION_TOLERANCE,
-  ACCURACY_TIE_THRESHOLD,
+  QUALITY_CONFIG,
 } from './constants';
+
+// ===========================
+// QUALITY SCORE
+// ===========================
+
+/**
+ * Compute qualityScore using fixed weights.
+ * Formula: acc*0.4 + vis*0.4 + (conf*100)*0.2
+ */
+export function computeQualityScore(
+  accuracy: number,
+  vision: number,
+  confidence: number
+): number {
+  return Math.round(
+    accuracy * QUALITY_CONFIG.accuracyWeight +
+    vision * QUALITY_CONFIG.visionWeight +
+    (confidence * 100) * QUALITY_CONFIG.confidenceWeight
+  );
+}
 
 // ===========================
 // KEYWORD EXTRACTION & NORMALIZATION
@@ -129,42 +147,114 @@ export function compareResults(
   a: RefinementIteration,
   b: RefinementIteration
 ): ComparisonResult {
-  const accDiff = a.accuracyScore - b.accuracyScore;
-  const visDiff = a.visionScore - b.visionScore;
+  const qa = a.qualityScore ?? computeQualityScore(a.accuracyScore, a.visionScore, a.confidence);
+  const qb = b.qualityScore ?? computeQualityScore(b.accuracyScore, b.visionScore, b.confidence);
 
-  // Check if B has significantly better accuracy without degrading vision
-  if (
-    accDiff <= -2 &&
-    b.visionScore >= a.visionScore - VISION_TOLERANCE
-  ) {
-    return 'b';
+  if (Math.abs(qa - qb) > 1) {
+    return qa > qb ? 'a' : 'b';
   }
 
-  // Check if A has significantly better accuracy without degrading vision
-  if (
-    accDiff >= 2 &&
-    a.visionScore >= b.visionScore - VISION_TOLERANCE
-  ) {
-    return 'a';
+  if (a.visionScore !== b.visionScore) {
+    return a.visionScore > b.visionScore ? 'a' : 'b';
   }
 
-  // Accuracy is tied (within threshold)
-  if (Math.abs(accDiff) < ACCURACY_TIE_THRESHOLD) {
-    // Prefer higher vision
-    if (visDiff > 0) return 'a';
-    if (visDiff < 0) return 'b';
-
-    // Vision tied, prefer higher confidence
-    if (a.confidence > b.confidence) return 'a';
-    if (a.confidence < b.confidence) return 'b';
-
-    // Everything tied, prefer earlier (stability)
-    return a.iteration <= b.iteration ? 'a' : 'b';
+  if (a.accuracyScore !== b.accuracyScore) {
+    return a.accuracyScore > b.accuracyScore ? 'a' : 'b';
   }
 
-  // Accuracy difference exists but not significant enough
-  // Fall back to higher accuracy
-  return accDiff > 0 ? 'a' : 'b';
+  if (a.confidence !== b.confidence) {
+    return a.confidence > b.confidence ? 'a' : 'b';
+  }
+
+  return a.iteration <= b.iteration ? 'a' : 'b';
+}
+
+// ===========================
+// ISSUE CLASSIFICATION
+// ===========================
+
+function normalizeIssue(issue: string): string {
+  return issue.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+export function classifyIssue(
+  issue: string,
+  context: { confidence?: number; priorEvals?: string[] } = {}
+): 'actionable' | 'non_actionable' | 'noise' {
+  const lower = issue.toLowerCase();
+
+  if (context.confidence !== undefined && context.confidence < 0.5) {
+    return 'noise';
+  }
+
+  if (context.priorEvals && context.priorEvals.some(prev => normalizeIssue(prev) === normalizeIssue(issue))) {
+    return 'noise';
+  }
+
+  const nonActionablePatterns = [
+    /height.*(without scale|feet tall)/i,
+    /glow.*(intensity|strength|pronounced)/i,
+    /shimmer/i,
+    /impossibly beautiful/i,
+    /serene expression/i,
+    /subjective/i,
+    /fabric semantics/i,
+    /cascading.*exactly/i,
+    /difficult to verify/i,
+    /appears.*than.*tall/i,
+    /not very pronounced/i,
+    /lack.*shimmer/i,
+    /not.*as much.*specified/i,
+  ];
+
+  if (nonActionablePatterns.some(pattern => pattern.test(lower))) {
+    return 'non_actionable';
+  }
+
+  return 'actionable';
+}
+
+export function classifyIssues(
+  issues: string[],
+  context: {
+    confidence?: number;
+    priorEvals?: string[];
+    issueHistory?: Record<string, { count: number; lastImprovement: boolean }>;
+    markNoImprovement?: boolean;
+  } = {}
+): { actionable: string[]; nonActionable: string[]; noise: string[] } {
+  const actionable: string[] = [];
+  const nonActionable: string[] = [];
+  const noise: string[] = [];
+
+  issues.forEach(issue => {
+    const classification = classifyIssue(issue, context);
+    const key = normalizeIssue(issue);
+
+    if (context.issueHistory) {
+      const current = context.issueHistory[key] || { count: 0, lastImprovement: true };
+      current.count += 1;
+      if (context.markNoImprovement !== undefined) {
+        current.lastImprovement = !context.markNoImprovement;
+      }
+      context.issueHistory[key] = current;
+
+      if (current.count >= 3 && !current.lastImprovement && classification === 'actionable') {
+        nonActionable.push(issue);
+        return;
+      }
+    }
+
+    if (classification === 'actionable') {
+      actionable.push(issue);
+    } else if (classification === 'non_actionable') {
+      nonActionable.push(issue);
+    } else {
+      noise.push(issue);
+    }
+  });
+
+  return { actionable, nonActionable, noise };
 }
 
 // ===========================
@@ -175,27 +265,27 @@ export function compareResults(
  * Check if a result passes acceptance criteria to be eligible for bestAcceptedResult.
  *
  * Criteria:
- * - visionScore >= MIN_VISION
- * - confidence >= MIN_CONFIDENCE OR issues are clearly actionable
+ * - visionScore >= 90% of baseline vision (first iteration or bestAccepted)
+ * - confidence >= 0.6
+ * - quality is better than current bestAccepted (if provided)
  * - (optional) prompt has not drifted beyond similarity floor
  */
 export function isAcceptable(
   result: RefinementIteration,
   checkDrift: boolean = false,
-  similarityFloor: number = 0.78
+  similarityFloor: number = 0.78,
+  baselineVision?: number,
+  bestAccepted?: RefinementIteration
 ): boolean {
-  // Must maintain minimum vision
-  if (result.visionScore < MIN_VISION) {
+  const requiredConfidence = Math.max(0.6, MIN_CONFIDENCE);
+  const baseline = baselineVision ?? bestAccepted?.visionScore ?? result.visionScore;
+  const visionFloor = 0.9 * baseline;
+
+  if (result.visionScore < visionFloor) {
     return false;
   }
 
-  // Must have sufficient confidence OR actionable issues
-  const hasGoodConfidence = result.confidence >= MIN_CONFIDENCE;
-  const hasActionableIssues =
-    result.evaluation.issues.length > 0 &&
-    result.evaluation.issues.every(issue => issue.length >= 10);
-
-  if (!hasGoodConfidence && !hasActionableIssues) {
+  if (result.confidence < requiredConfidence) {
     return false;
   }
 
@@ -204,6 +294,10 @@ export function isAcceptable(
     if (result.promptSimilarity < similarityFloor) {
       return false;
     }
+  }
+
+  if (bestAccepted && compareResults(result, bestAccepted) !== 'a') {
+    return false;
   }
 
   return true;
