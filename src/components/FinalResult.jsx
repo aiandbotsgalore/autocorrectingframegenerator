@@ -16,12 +16,15 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
   const userMessage = summary?.userMessage ?? stoppingExplanation;
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex overflow-hidden">
       {/* Left Column: Image + Actions */}
-      <div className="flex-1 flex flex-col p-6 overflow-hidden">
+      <div className="flex-1 flex flex-col p-6 overflow-hidden min-h-0 gap-4">
         {/* Image Container */}
-        <div className="flex-1 flex items-center justify-center mb-4">
-          <div className="relative rounded-lg overflow-hidden bg-black shadow-2xl w-full" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+        <div className="flex-1 min-h-0 flex items-center justify-center">
+          <div
+            className="relative rounded-lg overflow-hidden bg-black shadow-2xl w-full h-full max-h-full"
+            style={{ maxHeight: 'calc(100vh - 220px)' }}
+          >
             <img
               src={finalIteration.image}
               alt="Final result"
@@ -35,7 +38,7 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-shrink-0">
           <button
             onClick={() => downloadImage(finalIteration.image, finalIteration.accuracyScore, finalIteration.iteration)}
             className="flex-1 bg-[#00d4ff] text-[#0a0a0a] font-semibold py-3 rounded-lg hover:bg-[#00bbdd] transition-colors flex items-center justify-center gap-2"
@@ -54,7 +57,7 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
       </div>
 
       {/* Right Column: Scores + Tabs */}
-      <div className="w-[420px] border-l border-[#333333] flex flex-col overflow-hidden">
+      <div className="w-[420px] border-l border-[#333333] flex flex-col overflow-hidden min-h-0">
         {/* Status Header */}
         <div
           className="p-4 border-b flex-shrink-0"
@@ -167,7 +170,7 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto p-4 bg-[#0a0a0a]">
+        <div className="flex-1 overflow-y-auto p-4 bg-[#0a0a0a] min-h-0">
           {activeTab === 'details' && (
             <div className="space-y-3">
               {/* Evaluation Breakdown */}

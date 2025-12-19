@@ -191,7 +191,7 @@ function App() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         {apiKey && !finalResult && !currentIteration && (
           <div className="h-full flex items-center justify-center px-6">
             <div className="max-w-3xl w-full">

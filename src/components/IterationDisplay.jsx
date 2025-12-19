@@ -18,11 +18,11 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
   const isActive = status.includes('Generating') || status.includes('Evaluating') || status.includes('Correcting');
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex overflow-hidden">
       {/* Left Column: Image */}
-      <div className="flex-1 flex flex-col p-6 overflow-hidden">
+      <div className="flex-1 flex flex-col p-6 overflow-hidden min-h-0 gap-4">
         {/* Status Header */}
-        <div className="mb-4 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             {isActive && (
               <Loader2 className="w-5 h-5 text-[#00d4ff] animate-spin" />
@@ -60,9 +60,12 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
         </div>
 
         {/* Image Container */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 min-h-0 flex items-center justify-center">
           {image ? (
-            <div className="relative rounded-lg overflow-hidden bg-black shadow-2xl w-full" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+            <div
+              className="relative rounded-lg overflow-hidden bg-black shadow-2xl w-full h-full max-h-full"
+              style={{ maxHeight: 'calc(100vh - 260px)' }}
+            >
               <img
                 src={image}
                 alt={`Iteration ${iteration}`}
@@ -92,7 +95,7 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
         </div>
 
         {correctedPrompt && (
-          <div className="mt-4 bg-[#1a1a1a] border border-[#00d4ff]/20 rounded-lg p-3 flex-shrink-0">
+          <div className="bg-[#1a1a1a] border border-[#00d4ff]/20 rounded-lg p-3 flex-shrink-0 max-h-32 overflow-y-auto">
             <div className="flex items-center gap-2 mb-2">
               <Loader2 className="w-3.5 h-3.5 text-[#00d4ff] animate-spin" />
               <h4 className="text-[#00d4ff] font-semibold text-xs">CORRECTION IN PROGRESS</h4>
@@ -106,7 +109,7 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
 
       {/* Right Column: Evaluation Details */}
       {evaluation && (
-        <div className="w-[420px] border-l border-[#333333] flex flex-col overflow-hidden">
+        <div className="w-[420px] border-l border-[#333333] flex flex-col overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto p-4 bg-[#0a0a0a]">
             <div className="space-y-3">
               {/* Evaluation Breakdown */}
