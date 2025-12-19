@@ -62,6 +62,12 @@ export interface ImageEvaluation {
 
   /** What's working well (to preserve in refinements) */
   strengths: string[];
+
+  /**
+   * Raw issues as returned by evaluator.
+   * Used for actionable classification.
+   */
+  issuesRaw?: string[];
 }
 
 // ===========================
@@ -96,6 +102,7 @@ export type StoppingReason =
   | 'target_achieved'           // Hit target accuracy + vision thresholds
   | 'diminishing_returns'       // Plateau detected, no improvement
   | 'vision_risk_prevented'     // Stopped to protect original vision
+  | 'non_actionable_only'       // Only non-actionable issues remain
   | 'low_confidence_stall'      // Persistent low confidence across iterations
   | 'rewrite_budget_exhausted'  // Used all rewrite attempts without improvement
   | 'model_limitation_inferred' // Target likely exceeds model capabilities
@@ -125,6 +132,9 @@ export interface RefinementIteration {
   /** Evaluator confidence for this iteration */
   confidence: number;
 
+  /** Computed quality score using fixed weights (0-100) */
+  qualityScore?: number;
+
   /** Full evaluation details */
   evaluation: ImageEvaluation;
 
@@ -151,6 +161,33 @@ export interface RefinementIteration {
    * Used to detect drift.
    */
   promptSimilarity?: number;
+
+  /** Actionable issues after classification */
+  issuesActionable?: string[];
+
+  /** Non-actionable issues after classification */
+  issuesNonActionable?: string[];
+
+  /** Noise or contradictory issues */
+  issuesNoise?: string[];
+
+  /** Decision taken for this iteration */
+  decisionTaken?: 'accept' | 'reject' | 'regenerate' | 'refine' | 'stop';
+
+  /** Reason for the decision */
+  decisionReason?: string;
+
+  /** Structured audit log for traceability */
+  auditLog?: {
+    qualityScore: number;
+    actionableCount: number;
+    nonActionableCount: number;
+    noiseCount: number;
+    decisionTaken: 'accept' | 'reject' | 'regenerate' | 'refine' | 'stop';
+    refinementUsed: boolean;
+    promptChanges: string[];
+    stopTriggered: boolean;
+  };
 }
 
 // ===========================
@@ -201,6 +238,12 @@ export interface RefinementSession {
 
   /** Count of consecutive regenerations in current iteration */
   consecutiveRegenerations: number;
+
+  /** Issue persistence tracker */
+  issueHistory: Record<string, { count: number; lastImprovement: boolean }>;
+
+  /** Baseline vision from first iteration for acceptance comparisons */
+  initialVision?: number;
 }
 
 // ===========================
@@ -258,6 +301,15 @@ export interface FinalResult {
 
   /** User-friendly explanation of stopping reason */
   stoppingExplanation: string;
+
+  /** Summary object for UI display */
+  summary?: {
+    userMessage: string;
+    bestIterationIndex: number;
+    qualityPercent: number;
+    rejectedHigherScore: boolean;
+    rejectionExplanation?: string;
+  };
 }
 
 // ===========================
