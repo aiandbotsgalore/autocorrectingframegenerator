@@ -30,6 +30,7 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
               alt="Final result"
               className="w-full h-full object-contain"
               style={{ aspectRatio: '16/9' }}
+              decoding="async"
             />
             <div className="absolute top-4 right-4 bg-black/80 backdrop-blur px-3 py-1.5 rounded-lg">
               <p className="text-[#00d4ff] text-xs font-semibold">16:9 CINEMATIC</p>
