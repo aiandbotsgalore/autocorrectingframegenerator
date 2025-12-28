@@ -30,6 +30,8 @@ export default function ExamplePrompts({ onSelectExample }) {
     <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg overflow-hidden mb-6">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+        aria-controls="example-prompts-content"
         className="w-full px-6 py-4 flex items-center justify-between text-white hover:bg-[#222222] transition-colors"
       >
         <span className="font-medium">Example Prompts</span>
@@ -41,7 +43,7 @@ export default function ExamplePrompts({ onSelectExample }) {
       </button>
 
       {isExpanded && (
-        <div className="px-6 pb-6 space-y-4">
+        <div id="example-prompts-content" className="px-6 pb-6 space-y-4">
           {EXAMPLES.map((example, index) => (
             <div
               key={index}
@@ -54,6 +56,7 @@ export default function ExamplePrompts({ onSelectExample }) {
                     onClick={() => handleCopy(example.prompt, index)}
                     className="text-[#999999] hover:text-white transition-colors"
                     title="Copy prompt"
+                    aria-label="Copy prompt"
                   >
                     {copiedIndex === index ? (
                       <Check className="w-4 h-4 text-[#00ff88]" />
