@@ -52,8 +52,10 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
           </div>
           <div className="flex gap-2 bg-[#0a0a0a] rounded-lg p-1">
             <button
+              type="button"
               onClick={() => setMode('simple')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              aria-pressed={mode === 'simple'}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00d4ff] focus-visible:outline-none ${
                 mode === 'simple'
                   ? 'bg-[#00d4ff] text-[#0a0a0a]'
                   : 'text-[#999999] hover:text-white'
@@ -62,8 +64,10 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
               Simple
             </button>
             <button
+              type="button"
               onClick={() => setMode('pro')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              aria-pressed={mode === 'pro'}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00d4ff] focus-visible:outline-none ${
                 mode === 'pro'
                   ? 'bg-[#00d4ff] text-[#0a0a0a]'
                   : 'text-[#999999] hover:text-white'
