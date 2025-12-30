@@ -53,6 +53,7 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
           <div className="flex gap-2 bg-[#0a0a0a] rounded-lg p-1">
             <button
               onClick={() => setMode('simple')}
+              aria-pressed={mode === 'simple'}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 mode === 'simple'
                   ? 'bg-[#00d4ff] text-[#0a0a0a]'
@@ -63,6 +64,7 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
             </button>
             <button
               onClick={() => setMode('pro')}
+              aria-pressed={mode === 'pro'}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 mode === 'pro'
                   ? 'bg-[#00d4ff] text-[#0a0a0a]'
