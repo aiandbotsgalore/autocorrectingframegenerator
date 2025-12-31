@@ -115,6 +115,9 @@ const IterationHistory = memo(function IterationHistory({ iterations, isGenerati
         <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setSelectedIteration(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
         >
           <div
             className="bg-[#1a1a1a] border border-[#333333] rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto"
@@ -122,7 +125,7 @@ const IterationHistory = memo(function IterationHistory({ iterations, isGenerati
           >
             <div className="sticky top-0 bg-[#1a1a1a] border-b border-[#333333] p-4 flex items-center justify-between">
               <div>
-                <h3 className="text-white font-bold text-xl">
+                <h3 id="modal-title" className="text-white font-bold text-xl">
                   Iteration {selectedIteration.iteration}
                 </h3>
                 <p
@@ -135,6 +138,7 @@ const IterationHistory = memo(function IterationHistory({ iterations, isGenerati
               <button
                 onClick={() => setSelectedIteration(null)}
                 className="text-[#999999] hover:text-white transition-colors"
+                aria-label="Close details"
               >
                 <X className="w-6 h-6" />
               </button>
