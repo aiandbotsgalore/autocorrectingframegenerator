@@ -3,8 +3,8 @@
 **Action:** Always add dynamic `aria-label` props (e.g., "Show password" / "Hide password") to state-dependent icon buttons.
 
 ## 2024-05-22 - [Accessibility: Toggle Buttons]
-**Learning:** Visual-only toggle buttons (changing background color) are ambiguous to screen readers.  
-**Action:** Use `aria-pressed` on toggle buttons to programmatically communicate their state to assistive technology.
+**Learning:** Visual toggle buttons (such as Simple/Pro mode toggles) that rely only on color or visual styling to indicate state are ambiguous or inaccessible to screen reader users.  
+**Action:** Use `aria-pressed={isActive}` on toggle buttons to programmatically communicate their state to assistive technology.
 
 ## 2025-12-28 - [Accessibility: Accordions]
 **Learning:** Accordion components and other collapsible sections are a common accessibility trap. Without `aria-expanded`, screen reader users have no way of knowing whether content is visible or hidden, and relying on visual changes alone excludes non-visual users.  
