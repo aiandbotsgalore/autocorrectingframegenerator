@@ -1,16 +1,15 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, memo } from 'react';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import ExamplePrompts from './ExamplePrompts';
 
 const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey }) {
   const [prompt, setPrompt] = useState('');
-  const [wordCount, setWordCount] = useState(0);
   const [mode, setMode] = useState('simple'); // 'simple' or 'pro'
 
-  useEffect(() => {
-    const words = prompt.trim().split(/\s+/).filter(word => word.length > 0);
-    setWordCount(words.length);
-  }, [prompt]);
+  // Performance optimization: Calculate derived state in render
+  // instead of using useEffect which triggers an extra render
+  const words = prompt.trim().split(/\s+/).filter(word => word.length > 0);
+  const wordCount = words.length;
 
   const handleSubmit = () => {
     if (prompt.trim().length > 0) {
