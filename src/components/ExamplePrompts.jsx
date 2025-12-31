@@ -30,9 +30,9 @@ export default function ExamplePrompts({ onSelectExample }) {
     <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg overflow-hidden mb-6">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-6 py-4 flex items-center justify-between text-white hover:bg-[#222222] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4ff] focus-visible:ring-inset"
         aria-expanded={isExpanded}
         aria-controls="example-prompts-content"
-        className="w-full px-6 py-4 flex items-center justify-between text-white hover:bg-[#222222] transition-colors"
       >
         <span className="font-medium">Example Prompts</span>
         {isExpanded ? (
@@ -43,7 +43,12 @@ export default function ExamplePrompts({ onSelectExample }) {
       </button>
 
       {isExpanded && (
-        <div id="example-prompts-content" className="px-6 pb-6 space-y-4">
+        <div
+          id="example-prompts-content"
+          className="px-6 pb-6 space-y-4"
+          role="region"
+          aria-label="Example prompts list"
+        >
           {EXAMPLES.map((example, index) => (
             <div
               key={index}
@@ -54,9 +59,9 @@ export default function ExamplePrompts({ onSelectExample }) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCopy(example.prompt, index)}
-                    className="text-[#999999] hover:text-white transition-colors"
+                    className="text-[#999999] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4ff] rounded"
                     title="Copy prompt"
-                    aria-label="Copy prompt"
+                    aria-label={`Copy prompt for ${example.title}`}
                   >
                     {copiedIndex === index ? (
                       <Check className="w-4 h-4 text-[#00ff88]" />
@@ -71,7 +76,7 @@ export default function ExamplePrompts({ onSelectExample }) {
               </p>
               <button
                 onClick={() => onSelectExample(example.prompt)}
-                className="text-[#00d4ff] text-sm font-medium hover:underline"
+                className="text-[#00d4ff] text-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4ff] rounded px-1 -ml-1"
               >
                 Use this prompt
               </button>
