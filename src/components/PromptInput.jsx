@@ -1,16 +1,15 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, memo } from 'react';
 import { Sparkles, AlertCircle } from 'lucide-react';
 import ExamplePrompts from './ExamplePrompts';
 
 const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey }) {
   const [prompt, setPrompt] = useState('');
-  const [wordCount, setWordCount] = useState(0);
   const [mode, setMode] = useState('simple'); // 'simple' or 'pro'
 
-  useEffect(() => {
-    const words = prompt.trim().split(/\s+/).filter(word => word.length > 0);
-    setWordCount(words.length);
-  }, [prompt]);
+  // Performance optimization: Calculate derived state in render
+  // instead of using useEffect which triggers an extra render
+  const words = prompt.trim().split(/\s+/).filter(word => word.length > 0);
+  const wordCount = words.length;
 
   const handleSubmit = () => {
     if (prompt.trim().length > 0) {
@@ -52,9 +51,10 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
           </div>
           <div className="flex gap-2 bg-[#0a0a0a] rounded-lg p-1">
             <button
+              type="button"
               onClick={() => setMode('simple')}
               aria-pressed={mode === 'simple'}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00d4ff] focus-visible:outline-none ${
                 mode === 'simple'
                   ? 'bg-[#00d4ff] text-[#0a0a0a]'
                   : 'text-[#999999] hover:text-white'
@@ -63,9 +63,10 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
               Simple
             </button>
             <button
+              type="button"
               onClick={() => setMode('pro')}
               aria-pressed={mode === 'pro'}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[#00d4ff] focus-visible:outline-none ${
                 mode === 'pro'
                   ? 'bg-[#00d4ff] text-[#0a0a0a]'
                   : 'text-[#999999] hover:text-white'
