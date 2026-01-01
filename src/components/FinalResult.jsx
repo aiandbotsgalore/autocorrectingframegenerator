@@ -1,15 +1,26 @@
 import { useState } from 'react';
-import { CheckCircle, Download, RefreshCw, FileText, History, AlertCircle, Code } from 'lucide-react';
+import { CheckCircle, Download, RefreshCw, FileText, History, AlertCircle, Code, Copy, Check } from 'lucide-react';
 import { downloadImage, getScoreColor, getScoreTier } from '../utils/imageDownload';
 
 export default function FinalResult({ result, onNewGeneration, iterationHistory = [] }) {
   const [activeTab, setActiveTab] = useState('details');
+  const [copiedSection, setCopiedSection] = useState(null);
 
   if (!result) return null;
 
   const { success, result: finalIteration, iterations, stoppingReason, stoppingExplanation, summary } = result;
   const qualityPercent = summary?.qualityPercent ?? finalIteration.qualityScore ?? Math.round(finalIteration.accuracyScore * 0.4 + finalIteration.visionScore * 0.4 + finalIteration.confidence * 20);
   const bestIterationIndex = summary?.bestIterationIndex ?? finalIteration.iteration;
+
+  const handleCopy = async (text, sectionId) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedSection(sectionId);
+      setTimeout(() => setCopiedSection(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
   const scoreColor = getScoreColor(qualityPercent);
   const visionColor = getScoreColor(finalIteration.visionScore);
   const accuracyColor = getScoreColor(finalIteration.accuracyScore);
@@ -306,14 +317,42 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
           {activeTab === 'prompt' && (
             <div className="space-y-3">
               <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-3">
-                <h4 className="text-white font-semibold text-xs mb-2">Final Prompt Used</h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-white font-semibold text-xs">Final Prompt Used</h4>
+                  <button
+                    onClick={() => handleCopy(finalIteration.prompt, 'final')}
+                    className="text-[#999999] hover:text-white transition-colors"
+                    aria-label={copiedSection === 'final' ? 'Copied prompt' : 'Copy prompt'}
+                    title="Copy prompt"
+                  >
+                    {copiedSection === 'final' ? (
+                      <Check className="w-3.5 h-3.5 text-[#00ff88]" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
                 <p className="text-[#999999] text-xs leading-relaxed font-mono bg-black/50 p-3 rounded">
                   {finalIteration.prompt}
                 </p>
               </div>
               {finalIteration.correctedPrompt && (
                 <div className="bg-[#1a1a1a] border border-[#00d4ff]/20 rounded-lg p-3">
-                  <h4 className="text-[#00d4ff] font-semibold text-xs mb-2">Last Correction Applied</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-[#00d4ff] font-semibold text-xs">Last Correction Applied</h4>
+                    <button
+                      onClick={() => handleCopy(finalIteration.correctedPrompt, 'correction')}
+                      className="text-[#999999] hover:text-[#00d4ff] transition-colors"
+                      aria-label={copiedSection === 'correction' ? 'Copied correction' : 'Copy correction'}
+                      title="Copy correction"
+                    >
+                      {copiedSection === 'correction' ? (
+                        <Check className="w-3.5 h-3.5 text-[#00ff88]" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-[#999999] text-xs leading-relaxed font-mono bg-black/50 p-3 rounded">
                     {finalIteration.correctedPrompt}
                   </p>
