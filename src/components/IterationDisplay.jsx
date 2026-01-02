@@ -27,7 +27,7 @@ const IterationDisplay = memo(function IterationDisplay({ currentIteration }) {
             {isActive && (
               <Loader2 className="w-5 h-5 text-[#00d4ff] animate-spin" />
             )}
-            <div>
+            <div aria-live="polite" aria-atomic="true">
               <h3 className="text-white font-bold text-sm">
                 <span className="text-[#00d4ff]">ITERATION {iteration}/10</span>
               </h3>
