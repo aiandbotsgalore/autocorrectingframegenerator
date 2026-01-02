@@ -1,5 +1,5 @@
 import { useState, memo } from 'react';
-import { Sparkles, AlertCircle } from 'lucide-react';
+import { Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import ExamplePrompts from './ExamplePrompts';
 
 const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey }) {
@@ -109,13 +109,17 @@ const PromptInput = memo(function PromptInput({ onGenerate, isGenerating, apiKey
             disabled={!hasContent || isGenerating || !apiKey}
             className="px-6 py-3 bg-[#00d4ff] text-[#0a0a0a] font-semibold rounded-lg hover:bg-[#00bbdd] disabled:bg-[#333333] disabled:text-[#666666] disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            <Sparkles className="w-5 h-5" />
+            {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
             {isGenerating ? 'Generating...' : 'Generate & Auto-Refine'}
           </button>
         </div>
 
-        <p className="text-[#666666] text-xs mt-3">
-          Tip: Press Ctrl/Cmd + Enter to start generation
+        <p className="text-[#666666] text-xs mt-3 flex items-center gap-2">
+          Tip: Press
+          <kbd className="px-2 py-0.5 bg-[#333333] rounded text-white font-sans text-xs">Ctrl</kbd>
+          +
+          <kbd className="px-2 py-0.5 bg-[#333333] rounded text-white font-sans text-xs">Enter</kbd>
+          to start generation
         </p>
       </div>
     </div>
