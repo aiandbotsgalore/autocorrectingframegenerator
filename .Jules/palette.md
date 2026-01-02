@@ -1,11 +1,3 @@
-## 2024-05-22 - [Accessibility: Icon Buttons]
-**Learning:** Icon-only buttons (like password toggles) are completely invisible to screen readers without an `aria-label`.  
-**Action:** Always add dynamic `aria-label` props (e.g., "Show password" / "Hide password") to state-dependent icon buttons.
-
-## 2024-05-22 - [Accessibility: Toggle Buttons]
-**Learning:** Visual toggle buttons (such as Simple/Pro mode toggles) that rely only on color or visual styling to indicate state are ambiguous or inaccessible to screen reader users.  
-**Action:** Use `aria-pressed={isActive}` on toggle buttons to programmatically communicate their state to assistive technology.
-
-## 2025-12-28 - [Accessibility: Accordions]
-**Learning:** Accordion components and other collapsible sections are a common accessibility trap. Without `aria-expanded`, screen reader users have no way of knowing whether content is visible or hidden, and relying on visual changes alone excludes non-visual users.  
-**Action:** Always pair toggle buttons with `aria-expanded={isOpen}` and `aria-controls={contentId}` to clearly communicate state and relationships.
+## 2024-03-24 - Copy to Clipboard
+**Learning:** Users often need to quickly extract the final generated text. Adding a "copy" button next to key output text is a high-value, low-effort micro-UX improvement.
+**Action:** When displaying generated content (like prompts or code), always consider adding a copy utility.
