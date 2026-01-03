@@ -272,6 +272,8 @@ export default function FinalResult({ result, onNewGeneration, iterationHistory 
                         alt={`Iteration ${iter.iteration}`}
                         className="w-20 h-auto rounded object-contain"
                         style={{ aspectRatio: '16/9' }}
+                        loading="lazy"
+                        decoding="async"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
