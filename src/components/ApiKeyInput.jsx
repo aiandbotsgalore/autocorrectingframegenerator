@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Key, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Key, Check, X, Loader2 } from 'lucide-react';
 import { validateApiKey } from '../utils/geminiApi';
 
 export default function ApiKeyInput({ apiKey, onApiKeyChange }) {
@@ -127,9 +127,16 @@ export default function ApiKeyInput({ apiKey, onApiKeyChange }) {
       <button
         onClick={handleSave}
         disabled={isValidating || !inputValue.trim()}
-        className="mt-4 w-full bg-[#00d4ff] text-[#0a0a0a] font-semibold py-3 rounded-lg hover:bg-[#00bbdd] disabled:bg-[#333333] disabled:text-[#666666] disabled:cursor-not-allowed transition-colors"
+        className="mt-4 w-full bg-[#00d4ff] text-[#0a0a0a] font-semibold py-3 rounded-lg hover:bg-[#00bbdd] disabled:bg-[#333333] disabled:text-[#666666] disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
-        {isValidating ? 'Validating...' : 'Save Key'}
+        {isValidating ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Validating...
+          </>
+        ) : (
+          'Save Key'
+        )}
       </button>
     </div>
   );
